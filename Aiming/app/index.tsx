@@ -1,6 +1,6 @@
 import React from "react";
 import { registerRootComponent } from "expo";
-import TodoApp from "../components/TodoApp";
+import { TodoApp } from "../components/TodoApp";
 
 const App: React.FC = () => {
   return <TodoApp />;

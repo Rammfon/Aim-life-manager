@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -8,27 +8,42 @@ import {
   FlatList,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  Modal,
 } from "react-native";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Icon from "react-native-vector-icons/Ionicons";
 
 interface Todo {
   id: string;
   title: string;
   completed: boolean;
+  dueDate: string;
 }
 
-const TodoApp: React.FC = () => {
+export const TodoApp: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [text, setText] = useState<string>("");
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isAdding, setIsAdding] = useState<boolean>(false);
   const [currentTodoId, setCurrentTodoId] = useState<string | null>(null);
   const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null);
+  const [dueDate, setDueDate] = useState<Date>(new Date());
+  const [isDatePickerVisible, setDatePickerVisibility] =
+    useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<string>("today");
+  const textInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     loadTodos();
   }, []);
-
+  useEffect(() => {
+    if (isAdding || isEditing) {
+      setTimeout(() => {
+        textInputRef.current?.focus();
+      }, 100);
+    }
+  }, [isAdding, isEditing]);
   const loadTodos = async () => {
     try {
       const storedTodos = await AsyncStorage.getItem("todos");
@@ -56,15 +71,20 @@ const TodoApp: React.FC = () => {
   const sortTodos = (todos: Todo[]): Todo[] => {
     return todos.sort((a, b) => Number(a.completed) - Number(b.completed));
   };
+
   const addTodo = () => {
     if (text.trim().length > 0) {
-      const newTodos = sortTodos([
-        ...todos,
-        { id: Date.now().toString(), title: text, completed: false },
-      ]);
+      const newTodo: Todo = {
+        id: Date.now().toString(),
+        title: text,
+        completed: false,
+        dueDate: dueDate.toISOString().split("T")[0],
+      };
+      const newTodos = sortTodos([...todos, newTodo]);
       setTodos(newTodos);
       saveTodos(newTodos);
       setText("");
+      setDueDate(new Date());
       setIsAdding(false);
     }
   };
@@ -75,6 +95,12 @@ const TodoApp: React.FC = () => {
     saveTodos(newTodos);
     setSelectedTodoId(null);
     cancelEdit();
+  };
+
+  const deleteCompletedTodos = () => {
+    const newTodos = sortTodos(todos.filter((todo) => !todo.completed));
+    setTodos(newTodos);
+    saveTodos(newTodos);
   };
 
   const toggleComplete = (id: string) => {
@@ -88,12 +114,18 @@ const TodoApp: React.FC = () => {
     setSelectedTodoId(null);
     cancelEdit();
   };
+
   const startEditTodo = (id: string, title: string) => {
     setIsEditing(true);
     setIsAdding(false);
     setCurrentTodoId(id);
-    setText("");
+    setText(title);
     setSelectedTodoId(null);
+  };
+
+  const pickDateForTodo = (id: string) => {
+    setCurrentTodoId(id);
+    showDatePicker();
   };
 
   const editTodo = () => {
@@ -101,7 +133,12 @@ const TodoApp: React.FC = () => {
       const newTodos = sortTodos(
         todos.map((todo) =>
           todo.id === currentTodoId
-            ? { ...todo, title: text, completed: false }
+            ? {
+                ...todo,
+                title: text,
+                completed: false,
+                dueDate: dueDate.toISOString().split("T")[0],
+              }
             : todo
         )
       );
@@ -125,19 +162,85 @@ const TodoApp: React.FC = () => {
     setSelectedTodoId(id);
   };
 
-  const renderItem = ({ item }: { item: Todo }) => (
-    <TouchableOpacity
-      onLongPress={() => handleLongPress(item.id)}
-      onPress={() => toggleComplete(item.id)}
-      style={styles.todoItem}
-    >
-      <Text
-        style={[styles.todoText, item.completed && styles.todoTextCompleted]}
+  const showDatePicker = () => {
+    setDatePickerVisibility(true);
+  };
+
+  const hideDatePicker = () => {
+    setDatePickerVisibility(false);
+  };
+
+  const handleConfirm = (date: Date) => {
+    const newDueDate = date.toISOString().split("T")[0];
+    setDueDate(date);
+    if (isAdding) {
+      setDueDate(date);
+    } else if (currentTodoId) {
+      const newTodos = sortTodos(
+        todos.map((todo) =>
+          todo.id === currentTodoId
+            ? { ...todo, dueDate: newDueDate, completed: false }
+            : todo
+        )
+      );
+      setTodos(newTodos);
+      saveTodos(newTodos);
+      setCurrentTodoId(null);
+    }
+    hideDatePicker();
+  };
+
+  const formatDueDate = (dueDate: string): string => {
+    const today = new Date().toISOString().split("T")[0];
+    if (dueDate === today) {
+      return "Today";
+    } else {
+      const [year, month, day] = dueDate.split("-");
+      return `${parseInt(day, 10)}.${parseInt(month, 10)}.`;
+    }
+  };
+
+  const isDateInPast = (dueDate: string): boolean => {
+    const today = new Date();
+    const due = new Date(dueDate);
+    today.setHours(0, 0, 0, 0); // Nastavíme hodiny na 0, aby se porovnalo pouze datum
+    due.setHours(0, 0, 0, 0);
+    return due < today;
+  };
+
+  const renderItem = ({ item }: { item: Todo }) => {
+    const isEditingCurrentTodo = currentTodoId === item.id;
+
+    return (
+      <TouchableOpacity
+        onLongPress={() => handleLongPress(item.id)}
+        onPress={() => toggleComplete(item.id)}
+        style={[
+          styles.todoItem,
+          isEditingCurrentTodo && styles.editingTodoItem,
+        ]}
       >
-        {item.title}
-      </Text>
-    </TouchableOpacity>
-  );
+        <Text
+          style={[
+            styles.todoText,
+            item.completed && styles.todoTextCompleted,
+            isDateInPast(item.dueDate) && styles.pastDueDateText,
+          ]}
+        >
+          {item.title} - {formatDueDate(item.dueDate)}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const filterTodos = () => {
+    const today = new Date().toISOString().split("T")[0];
+    if (viewMode === "today") {
+      return todos.filter((todo) => todo.dueDate === today);
+    } else {
+      return todos.filter((todo) => todo.dueDate !== today);
+    }
+  };
 
   return (
     <TouchableWithoutFeedback onPress={() => setSelectedTodoId(null)}>
@@ -153,35 +256,39 @@ const TodoApp: React.FC = () => {
                 )
               }
             >
-              <Text style={styles.actionText}>Edit</Text>
+              <Icon name="pencil" size={20} color="#000" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => pickDateForTodo(selectedTodoId!)}
+            >
+              <Icon name="calendar" size={20} color="#000" />
+
+              <DateTimePickerModal
+                isVisible={isDatePickerVisible}
+                mode="date"
+                onConfirm={handleConfirm}
+                onCancel={hideDatePicker}
+              />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => deleteTodo(selectedTodoId!)}
             >
-              <Text style={styles.actionText}>Delete</Text>
+              <Icon name="trash" size={20} color="#000" />
             </TouchableOpacity>
           </View>
         )}
         <Text style={styles.title}>Todo App</Text>
-        {(isAdding || isEditing) && (
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              onChangeText={setText}
-              value={text}
-              placeholder={isEditing ? "Edit Todo" : "Add Todo"}
-            />
-            {isEditing ? (
-              <Button title="Save" onPress={editTodo} />
-            ) : (
-              <Button title="Save" onPress={addTodo} />
-            )}
-            <Button title="Cancel" onPress={cancelEdit} />
-          </View>
-        )}
+        <View style={styles.menu}>
+          <Button title="Today's Tasks" onPress={() => setViewMode("today")} />
+          <Button
+            title="Scheduled Tasks"
+            onPress={() => setViewMode("scheduled")}
+          />
+        </View>
         <FlatList
-          data={todos}
+          data={filterTodos()}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
         />
@@ -191,10 +298,53 @@ const TodoApp: React.FC = () => {
             setIsAdding(true);
             setIsEditing(false);
             setText("");
+            setDueDate(new Date());
           }}
         >
           <Text style={styles.addButtonText}>+</Text>
         </TouchableOpacity>
+
+        <Button title="Delete Completed Todos" onPress={deleteCompletedTodos} />
+
+        <Modal visible={isEditing} transparent={true} animationType="slide">
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <TextInput
+                ref={textInputRef}
+                style={styles.input}
+                onChangeText={setText}
+                value={text}
+                placeholder={"Edit Todo"}
+              />
+
+              <Button title="Save" onPress={editTodo} />
+
+              <Button title="Cancel" onPress={cancelEdit} />
+            </View>
+          </View>
+        </Modal>
+        <Modal visible={isAdding} transparent={true} animationType="slide">
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <TextInput
+                ref={textInputRef}
+                style={styles.input}
+                onChangeText={setText}
+                value={text}
+                placeholder="Add Todo"
+              />
+              <Button title="Pick a date" onPress={showDatePicker} />
+              <DateTimePickerModal
+                isVisible={isDatePickerVisible}
+                mode="date"
+                onConfirm={handleConfirm}
+                onCancel={hideDatePicker}
+              />
+              <Button title="Save" onPress={addTodo} />
+              <Button title="Cancel" onPress={cancelEdit} />
+            </View>
+          </View>
+        </Modal>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -222,7 +372,7 @@ const styles = StyleSheet.create({
   actionButton: {
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#e0e0e0",
     borderRadius: 5,
     marginHorizontal: 5,
   },
@@ -232,17 +382,20 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 50,
   },
-  inputContainer: {
+  menu: {
     flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  inputContainer: {
     marginBottom: 20,
   },
   input: {
-    flex: 1,
     borderColor: "#ddd",
     borderWidth: 1,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    marginRight: 10,
+    marginBottom: 10,
   },
   todoItem: {
     padding: 10,
@@ -263,6 +416,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 30,
     left: "50%",
+
     width: 50,
     height: 50,
     backgroundColor: "blue",
@@ -274,6 +428,25 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 30,
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    width: 300,
+    padding: 20,
+    backgroundColor: "white",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  editingTodoItem: {
+    backgroundColor: "#e0f7fa", // Světle modrá barva pro zvýraznění editovaného úkolu
+  },
+  pastDueDateText: {
+    color: "red", // Červená barva pro datum splnění v minulosti
+  },
 });
 
-export default TodoApp;
+//   <Button title="Delete Completed Todos" onPress={deleteCompletedTodos} />
