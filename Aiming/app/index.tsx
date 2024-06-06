@@ -7,8 +7,11 @@ const HomePage = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Homepage</Text>
-      <Link style={styles.title} href="/myday/bacon">
+      <Link style={styles.title} href="/myday/1">
         My Day
+      </Link>
+      <Link style={styles.title} href="/mylists/lists">
+        My Lists
       </Link>
     </View>
   );

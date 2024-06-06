@@ -18,6 +18,18 @@ const RootLayout = () => {
           headerTitle: "My Day",
         }}
       />
+      <Stack.Screen
+        name="mylists/lists"
+        options={{
+          headerTitle: "My Lists",
+        }}
+      />
+      <Stack.Screen
+        name="mylists/mylistsdetail/[listid]"
+        options={{
+          headerTitle: "List Detail",
+        }}
+      />
     </Stack>
   );
 };
