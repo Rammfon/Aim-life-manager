@@ -1,36 +1,43 @@
-import { Stack } from "expo-router";
+import React from "react";
+import { Stack, Slot } from "expo-router";
+import { ThemeProvider } from "./ThemeContext";
 
 const RootLayout = () => {
   return (
-    <Stack>
-      <Stack.Screen
-        name="index"
-        options={{
-          headerTitle: "Home",
-          headerStyle: {
-            backgroundColor: "green",
-          },
-        }}
-      />
-      <Stack.Screen
-        name="myday/[id]"
-        options={{
-          headerTitle: "My Day",
-        }}
-      />
-      <Stack.Screen
-        name="mylists/lists"
-        options={{
-          headerTitle: "My Lists",
-        }}
-      />
-      <Stack.Screen
-        name="mylists/mylistsdetail/[listid]"
-        options={{
-          headerTitle: "List Detail",
-        }}
-      />
-    </Stack>
+    <ThemeProvider>
+      <Stack>
+        <Stack.Screen
+          name="index"
+          options={{
+            headerTitle: "",
+          }}
+        />
+        <Stack.Screen
+          name="myday/[id]"
+          options={{
+            headerTitle: "Home",
+          }}
+        />
+        <Stack.Screen
+          name="mylists/lists"
+          options={{
+            headerTitle: "Home",
+          }}
+        />
+        <Stack.Screen
+          name="mylists/mylistsdetail/[listid]"
+          options={{
+            headerTitle: "Home",
+          }}
+        />
+        <Stack.Screen
+          name="mainsettings/mainsettings"
+          options={{
+            headerTitle: "Home",
+          }}
+        />
+      </Stack>
+    </ThemeProvider>
   );
 };
 

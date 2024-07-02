@@ -13,7 +13,17 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "expo-router";
 import { Link, router } from "expo-router";
-
+import Icon from "react-native-vector-icons/Ionicons";
+import {
+  MenuProvider,
+  Menu,
+  MenuOptions,
+  MenuOption,
+  MenuTrigger,
+} from "react-native-popup-menu";
+import MainPageMenu from "@/components/mainPageMenu";
+import ThemedView from "../ThemedView";
+import { useTheme } from "../ThemeContext";
 interface List {
   id: string;
   name: string;
@@ -24,9 +34,14 @@ const MyTodoList: React.FC = () => {
   const [lists, setLists] = useState<List[]>([]);
   const [listName, setListName] = useState<string>("");
   const [isAddingList, setIsAddingList] = useState<boolean>(false);
+  const [selectedListId, setSelectedListId] = useState<string | null>(null);
+  const [isSelectingForDeletion, setIsSelectingForDeletion] =
+    useState<boolean>(false);
+  const [listsToDelete, setListsToDelete] = useState<Set<string>>(new Set());
+  const [isConfirmDeleteVisible, setIsConfirmDeleteVisible] =
+    useState<boolean>(false);
   const textInputRef = useRef<TextInput>(null);
-  const navigation = useNavigation();
-
+  const { textColor, iconColor } = useTheme();
   useEffect(() => {
     loadLists();
   }, []);
@@ -78,65 +93,186 @@ const MyTodoList: React.FC = () => {
     }
   };
 
-  const renderList = ({ item }: { item: List }) => (
-    <Pressable
-      style={styles.listContainer}
-      onPress={() =>
-        router.push({
-          pathname: "mylists/mylistsdetail/[listid]",
-          params: { listid: item.id },
-        })
+  const toggleSelectForDeletion = (listId: string) => {
+    setListsToDelete((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(listId)) {
+        newSet.delete(listId);
+      } else {
+        newSet.add(listId);
       }
-    >
-      <Text style={styles.listName}>{item.name}</Text>
-    </Pressable>
+      return newSet;
+    });
+  };
+
+  const confirmDeleteSelectedLists = () => {
+    setIsConfirmDeleteVisible(true);
+  };
+
+  const deleteSelectedLists = () => {
+    const newLists = lists.filter((list) => !listsToDelete.has(list.id));
+    setLists(newLists);
+    saveLists(newLists);
+    setIsSelectingForDeletion(false);
+    setListsToDelete(new Set());
+    setIsConfirmDeleteVisible(false);
+  };
+
+  const cancelDelete = () => {
+    setIsSelectingForDeletion(false);
+    setListsToDelete(new Set());
+    setIsConfirmDeleteVisible(false);
+  };
+
+  const renderList = ({ item }: { item: List }) => (
+    <View>
+      <Pressable
+        style={styles.listContainer}
+        onLongPress={() => setSelectedListId(item.id)}
+        onPress={() =>
+          isSelectingForDeletion
+            ? toggleSelectForDeletion(item.id)
+            : router.push({
+                pathname: "mylists/mylistsdetail/[listid]",
+                params: { listid: item.id },
+              })
+        }
+      >
+        <Text style={[styles.listName, { color: textColor }]}>{item.name}</Text>
+        {isSelectingForDeletion && listsToDelete.has(item.id) && (
+          <Icon name="checkmark" size={20} color="green" />
+        )}
+      </Pressable>
+    </View>
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>My Todo Lists</Text>
-      <FlatList
-        data={lists}
-        renderItem={renderList}
-        keyExtractor={(item) => item.id}
-      />
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => setIsAddingList(true)}
-      >
-        <Text style={styles.addButtonText}>+</Text>
-      </TouchableOpacity>
-
-      <Modal visible={isAddingList} transparent={true} animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <TextInput
-              ref={textInputRef}
-              style={styles.input}
-              onChangeText={setListName}
-              value={listName}
-              placeholder="List Name"
-            />
-            <Button title="Save" onPress={addList} />
-            <Button title="Cancel" onPress={() => setIsAddingList(false)} />
-          </View>
+    <MenuProvider>
+      <ThemedView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: textColor }]}>My Lists</Text>
+          <Menu>
+            <MenuTrigger>
+              <Icon
+                name="menu"
+                size={30}
+                color="#000"
+                style={[styles.menuIcon, { color: iconColor }]}
+              />
+            </MenuTrigger>
+            <MenuOptions>
+              <MenuOption
+                onSelect={() => {
+                  setIsSelectingForDeletion(!isSelectingForDeletion);
+                }}
+              >
+                <Text style={styles.menuOptionText}>Delete lists</Text>
+              </MenuOption>
+            </MenuOptions>
+          </Menu>
         </View>
-      </Modal>
-    </View>
+        <FlatList
+          data={lists}
+          renderItem={renderList}
+          keyExtractor={(item) => item.id}
+        />
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setIsAddingList(true)}
+        >
+          <Text style={styles.addButtonText}>+</Text>
+        </TouchableOpacity>
+
+        {isSelectingForDeletion && (
+          <View style={styles.actionBar}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={confirmDeleteSelectedLists}
+            >
+              <Text>Delete selected</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={cancelDelete}
+            >
+              <Text>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <Modal
+          visible={isConfirmDeleteVisible}
+          transparent={true}
+          animationType="slide"
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.confirmDeleteText}>
+                Are you sure you want to delete the following lists?
+              </Text>
+              {Array.from(listsToDelete).map((listId) => {
+                const list = lists.find((list) => list.id === listId);
+                return (
+                  <Text key={listId} style={styles.listToDelete}>
+                    {list?.name}
+                  </Text>
+                );
+              })}
+              <View style={styles.confirmDeleteButtons}>
+                <Button
+                  title="Confirm"
+                  onPress={deleteSelectedLists}
+                  color="red"
+                />
+                <Button title="Cancel" onPress={cancelDelete} />
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal visible={isAddingList} transparent={true} animationType="slide">
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <TextInput
+                ref={textInputRef}
+                style={styles.input}
+                onChangeText={setListName}
+                value={listName}
+                placeholder="List Name"
+              />
+              <Button title="Save" onPress={addList} />
+              <Button title="Cancel" onPress={() => setIsAddingList(false)} />
+            </View>
+          </View>
+        </Modal>
+      </ThemedView>
+    </MenuProvider>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+
     paddingTop: 50,
     paddingHorizontal: 20,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 20,
+  },
+  menuIcon: {
+    padding: 10,
+  },
+  menuOptionText: {
+    padding: 10,
+    fontSize: 18,
   },
   listContainer: {
     marginBottom: 20,
@@ -152,7 +288,7 @@ const styles = StyleSheet.create({
   addButton: {
     position: "absolute",
     bottom: 30,
-    right: 30,
+    left: "50%",
     width: 50,
     height: 50,
     backgroundColor: "blue",
@@ -163,6 +299,39 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: "white",
     fontSize: 30,
+  },
+  actionBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    backgroundColor: "#f9f9f9",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderColor: "#ddd",
+  },
+  actionButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: "#e0e0e0",
+    borderRadius: 5,
+    marginHorizontal: 5,
+  },
+  confirmDeleteButton: {
+    position: "absolute",
+    bottom: 30,
+    left: 30,
+    right: 30,
+    backgroundColor: "red",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  confirmDeleteButtonText: {
+    color: "white",
+    fontSize: 18,
   },
   modalContainer: {
     flex: 1,
@@ -176,6 +345,19 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderRadius: 10,
     alignItems: "center",
+  },
+  confirmDeleteText: {
+    marginBottom: 10,
+    fontSize: 16,
+  },
+  listToDelete: {
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  confirmDeleteButtons: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
   },
   input: {
     borderColor: "#ddd",

@@ -27,8 +27,15 @@ interface Todo {
   title: string;
   completed: boolean;
   dueDate: string;
+  repeat: string;
+  daysOfWeek?: string[];
 }
 
+import { RepeatPicker as Reppicker } from "@/components/repeatPicker";
+import CustomButton from "@/components/customButton";
+import CustomModalWindow from "@/components/customModalWindow";
+import ThemedView from "../ThemedView";
+import { useTheme } from "../ThemeContext";
 const TodoApp: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [text, setText] = useState<string>("");
@@ -39,10 +46,15 @@ const TodoApp: React.FC = () => {
   const [dueDate, setDueDate] = useState<Date>(new Date());
   const [isDatePickerVisible, setDatePickerVisibility] =
     useState<boolean>(false);
+  const [isRepeatPickerVisible, setRepeatPickerVisibility] =
+    useState<boolean>(false);
   const [viewMode, setViewMode] = useState<string>("today");
+  const [repeat, setRepeat] = useState<string>("none");
+  const [daysOfWeek, setDaysOfWeek] = useState<string[]>([]);
   const textInputRef = useRef<TextInput>(null);
   const { id } = useLocalSearchParams<{ id: string }>();
-
+  const { textColor, iconColor } = useTheme();
+  useState<boolean>(false);
   useEffect(() => {
     loadTodos();
   }, []);
@@ -90,12 +102,16 @@ const TodoApp: React.FC = () => {
         title: text,
         completed: false,
         dueDate: dueDate.toISOString().split("T")[0],
+        repeat,
+        daysOfWeek,
       };
       const newTodos = sortTodos([...todos, newTodo]);
       setTodos(newTodos);
       saveTodos(newTodos);
       setText("");
       setDueDate(new Date());
+      setRepeat("none");
+      setDaysOfWeek([]);
       setIsAdding(false);
     }
   };
@@ -149,6 +165,8 @@ const TodoApp: React.FC = () => {
                 title: text,
                 completed: false,
                 dueDate: dueDate.toISOString().split("T")[0],
+                repeat,
+                daysOfWeek,
               }
             : todo
         )
@@ -166,6 +184,8 @@ const TodoApp: React.FC = () => {
     setIsAdding(false);
     setText("");
     setCurrentTodoId(null);
+    setRepeat("none");
+    setDaysOfWeek([]);
   };
 
   const handleLongPress = (id: string) => {
@@ -179,6 +199,14 @@ const TodoApp: React.FC = () => {
 
   const hideDatePicker = () => {
     setDatePickerVisibility(false);
+  };
+
+  const showRepeatPicker = () => {
+    setRepeatPickerVisibility(true);
+  };
+
+  const hideRepeatPicker = () => {
+    setRepeatPickerVisibility(false);
   };
 
   const handleConfirm = (date: Date) => {
@@ -231,6 +259,27 @@ const TodoApp: React.FC = () => {
           isEditingCurrentTodo && styles.editingTodoItem,
         ]}
       >
+        <View style={styles.todoTextContainer}>
+          <Text
+            style={[
+              styles.todoText,
+              item.completed && styles.todoTextCompleted,
+              isDateInPast(item.dueDate) && styles.pastDueDateText,
+              { color: textColor },
+            ]}
+          >
+            {item.title}
+          </Text>
+          {(item.repeat !== "none" ||
+            (item.daysOfWeek && item.daysOfWeek.length > 0)) && (
+            <Icon
+              name="repeat"
+              size={20}
+              color="#000"
+              style={[styles.repeatIcon, { color: iconColor }]}
+            />
+          )}
+        </View>
         <Text
           style={[
             styles.todoText,
@@ -238,12 +287,11 @@ const TodoApp: React.FC = () => {
             isDateInPast(item.dueDate) && styles.pastDueDateText,
           ]}
         >
-          {item.title} - {formatDueDate(item.dueDate)}
+          {formatDueDate(item.dueDate)}
         </Text>
       </TouchableOpacity>
     );
   };
-
   const filterTodos = () => {
     const today = new Date().toISOString().split("T")[0];
     if (viewMode === "today") {
@@ -253,21 +301,36 @@ const TodoApp: React.FC = () => {
     }
   };
 
+  const handleDaysOfWeekChange = (day: string) => {
+    setDaysOfWeek((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
+
+  const openAddModal = () => {
+    setIsAdding(true);
+    setText("");
+    setDueDate(new Date());
+    setRepeat("none");
+    setDaysOfWeek([]);
+  };
+
   return (
     <MenuProvider>
       <TouchableWithoutFeedback onPress={() => setSelectedTodoId(null)}>
-        <View style={styles.container}>
+        <ThemedView style={styles.container}>
           <View style={styles.header}>
-            <Text style={styles.title}>
+            <Text style={[styles.title, { color: textColor }]}>
               {viewMode === "today" ? "Today Tasks" : "All Tasks"}
             </Text>
+
             <Menu>
               <MenuTrigger>
                 <Icon
                   name="menu"
                   size={30}
                   color="#000"
-                  style={styles.menuIcon}
+                  style={[styles.menuIcon, { color: iconColor }]}
                 />
               </MenuTrigger>
               <MenuOptions>
@@ -341,6 +404,7 @@ const TodoApp: React.FC = () => {
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => {
+              openAddModal;
               setIsAdding(true);
               setIsEditing(false);
               setText("");
@@ -349,48 +413,82 @@ const TodoApp: React.FC = () => {
           >
             <Text style={styles.addButtonText}>+</Text>
           </TouchableOpacity>
-
-          <Modal visible={isEditing} transparent={true} animationType="slide">
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <TextInput
-                  ref={textInputRef}
-                  style={styles.input}
-                  onChangeText={setText}
-                  value={text}
-                  placeholder={"Edit Todo"}
+          {isEditing && (
+            <CustomModalWindow
+              open={isEditing}
+              onPressSave={editTodo}
+              onPressCancel={cancelEdit}
+            >
+              <TextInput
+                ref={textInputRef}
+                style={styles.input}
+                placeholder="Edit todo..."
+                value={text}
+                onChangeText={setText}
+                onSubmitEditing={editTodo}
+                returnKeyType="done"
+              />
+              <CustomButton title="Pick a date" onPress={showDatePicker} />
+              <DateTimePickerModal
+                isVisible={isDatePickerVisible}
+                mode="date"
+                onConfirm={handleConfirm}
+                onCancel={hideDatePicker}
+              />
+              <CustomButton title="Repeat" onPress={showRepeatPicker} />
+              <CustomModalWindow
+                open={isRepeatPickerVisible}
+                onPressSave={hideRepeatPicker}
+                onPressCancel={hideRepeatPicker}
+              >
+                <Reppicker
+                  repeat={repeat}
+                  setRepeat={setRepeat}
+                  daysOfWeek={daysOfWeek}
+                  setDaysOfWeek={setDaysOfWeek}
                 />
+              </CustomModalWindow>
+            </CustomModalWindow>
+          )}
 
-                <Button title="Save" onPress={editTodo} />
-
-                <Button title="Cancel" onPress={cancelEdit} />
-              </View>
-            </View>
-          </Modal>
-
-          <Modal visible={isAdding} transparent={true} animationType="slide">
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <TextInput
-                  ref={textInputRef}
-                  style={styles.input}
-                  onChangeText={setText}
-                  value={text}
-                  placeholder="Add Todo"
+          {isAdding && (
+            <CustomModalWindow
+              open={isAdding}
+              onPressSave={addTodo}
+              onPressCancel={cancelEdit}
+            >
+              <TextInput
+                ref={textInputRef}
+                style={styles.input}
+                placeholder="Enter todo..."
+                value={text}
+                onChangeText={setText}
+                onSubmitEditing={addTodo}
+                returnKeyType="done"
+              />
+              <CustomButton title="Pick a date" onPress={showDatePicker} />
+              <DateTimePickerModal
+                isVisible={isDatePickerVisible}
+                mode="date"
+                onConfirm={handleConfirm}
+                onCancel={hideDatePicker}
+              />
+              <CustomButton title="Repeat" onPress={showRepeatPicker} />
+              <CustomModalWindow
+                open={isRepeatPickerVisible}
+                onPressSave={hideRepeatPicker}
+                onPressCancel={hideRepeatPicker}
+              >
+                <Reppicker
+                  repeat={repeat}
+                  setRepeat={setRepeat}
+                  daysOfWeek={daysOfWeek}
+                  setDaysOfWeek={setDaysOfWeek}
                 />
-                <Button title="Pick a date" onPress={showDatePicker} />
-                <DateTimePickerModal
-                  isVisible={isDatePickerVisible}
-                  mode="date"
-                  onConfirm={handleConfirm}
-                  onCancel={hideDatePicker}
-                />
-                <Button title="Save" onPress={addTodo} />
-                <Button title="Cancel" onPress={cancelEdit} />
-              </View>
-            </View>
-          </Modal>
-        </View>
+              </CustomModalWindow>
+            </CustomModalWindow>
+          )}
+        </ThemedView>
       </TouchableWithoutFeedback>
     </MenuProvider>
   );
@@ -399,7 +497,7 @@ const TodoApp: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+
     paddingTop: 50,
     paddingHorizontal: 20,
   },
@@ -411,9 +509,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
+    color: "#FFC300",
   },
   menuIcon: {
     padding: 10,
+    color: "#FFC300",
   },
   menuOptionText: {
     padding: 10,
@@ -442,6 +542,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   input: {
+    color: "#FFC300",
     borderColor: "#ddd",
     borderWidth: 1,
     paddingHorizontal: 8,
@@ -452,6 +553,10 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderColor: "#ddd",
+  },
+  todoTextContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   todoText: {
     fontSize: 18,
@@ -473,13 +578,13 @@ const styles = StyleSheet.create({
 
     width: 50,
     height: 50,
-    backgroundColor: "blue",
+    backgroundColor: "#83218B",
     borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
   },
   addButtonText: {
-    color: "white",
+    color: "#FFC300",
     fontSize: 30,
   },
   modalContainer: {
@@ -494,6 +599,24 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderRadius: 10,
     alignItems: "center",
+  },
+  daysOfWeekContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  dayButton: {
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: "#f0f0f0",
+    marginHorizontal: 5,
+  },
+  selectedDayButton: {
+    backgroundColor: "#a0a0a0",
+  },
+  repeatIcon: {
+    marginLeft: 10,
+    color: "#FFC300",
   },
 });
 
