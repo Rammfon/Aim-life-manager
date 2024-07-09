@@ -1,5 +1,6 @@
 import React from "react";
 import { Text, StyleSheet, TouchableOpacity, ViewStyle } from "react-native";
+import { useTheme } from "@/app/ThemeContext";
 
 interface CustomButtonProps {
   title: string;
@@ -11,14 +12,25 @@ const CustomButton: React.FC<CustomButtonProps> = ({
   title,
   onPress,
   style,
-}) => (
-  <TouchableOpacity
-    style={[styles.customButton, ...(Array.isArray(style) ? style : [style])]}
-    onPress={onPress}
-  >
-    <Text style={styles.customButtonText}>{title}</Text>
-  </TouchableOpacity>
-);
+}) => {
+  const { colors } = useTheme();
+  return (
+    <TouchableOpacity
+      style={[
+        styles.customButton,
+        { backgroundColor: colors.buttonBackgroundColor }, // Nastavení barvy pozadí
+        ...(Array.isArray(style) ? style : [style]),
+      ]}
+      onPress={onPress}
+    >
+      <Text
+        style={[styles.customButtonText, { color: colors.buttonTextColor }]}
+      >
+        {title}
+      </Text>
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   customButton: {

@@ -2,20 +2,35 @@
 import React from "react";
 import { Modal, View, Text, Button, StyleSheet } from "react-native";
 import CustomButton from "./customButton";
-
+import { useTheme } from "@/app/ThemeContext";
 const CustomModalWindow: React.FC<{
   open: boolean;
   onPressSave: () => void;
   onPressCancel: () => void;
   children: React.ReactNode;
-}> = ({ open, onPressSave, onPressCancel, children }) => {
+  saveButtonTitle?: string;
+  cancelButtonTitle?: string;
+}> = ({
+  open,
+  onPressSave,
+  onPressCancel,
+  children,
+  saveButtonTitle = "Save",
+  cancelButtonTitle = "Cancel",
+}) => {
+  const { colors } = useTheme();
   return (
     <Modal visible={open} transparent>
       <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
+        <View
+          style={[
+            styles.modalContent,
+            { backgroundColor: colors.modalBackgroundColor },
+          ]}
+        >
           {children}
-          <CustomButton title="Save" onPress={onPressSave} />
-          <CustomButton title="Cancel" onPress={onPressCancel} />
+          <CustomButton title={saveButtonTitle} onPress={onPressSave} />
+          <CustomButton title={cancelButtonTitle} onPress={onPressCancel} />
         </View>
       </View>
     </Modal>
@@ -32,7 +47,6 @@ const styles = StyleSheet.create({
   modalContent: {
     width: 300,
     padding: 20,
-    backgroundColor: "black",
 
     borderRadius: 10,
     alignItems: "center",

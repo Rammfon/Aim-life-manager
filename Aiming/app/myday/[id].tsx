@@ -53,7 +53,7 @@ const TodoApp: React.FC = () => {
   const [daysOfWeek, setDaysOfWeek] = useState<string[]>([]);
   const textInputRef = useRef<TextInput>(null);
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { textColor, iconColor } = useTheme();
+  const { colors } = useTheme();
   useState<boolean>(false);
   useEffect(() => {
     loadTodos();
@@ -256,6 +256,7 @@ const TodoApp: React.FC = () => {
         onPress={() => toggleComplete(item.id)}
         style={[
           styles.todoItem,
+          { borderColor: colors.listContainerBorderColor },
           isEditingCurrentTodo && styles.editingTodoItem,
         ]}
       >
@@ -265,7 +266,7 @@ const TodoApp: React.FC = () => {
               styles.todoText,
               item.completed && styles.todoTextCompleted,
               isDateInPast(item.dueDate) && styles.pastDueDateText,
-              { color: textColor },
+              { color: colors.textColor },
             ]}
           >
             {item.title}
@@ -276,7 +277,7 @@ const TodoApp: React.FC = () => {
               name="repeat"
               size={20}
               color="#000"
-              style={[styles.repeatIcon, { color: iconColor }]}
+              style={[styles.repeatIcon, { color: colors.iconColor }]}
             />
           )}
         </View>
@@ -320,7 +321,7 @@ const TodoApp: React.FC = () => {
       <TouchableWithoutFeedback onPress={() => setSelectedTodoId(null)}>
         <ThemedView style={styles.container}>
           <View style={styles.header}>
-            <Text style={[styles.title, { color: textColor }]}>
+            <Text style={[styles.title, { color: colors.textColor }]}>
               {viewMode === "today" ? "Today Tasks" : "All Tasks"}
             </Text>
 
@@ -330,10 +331,12 @@ const TodoApp: React.FC = () => {
                   name="menu"
                   size={30}
                   color="#000"
-                  style={[styles.menuIcon, { color: iconColor }]}
+                  style={[styles.menuIcon, { color: colors.iconColor }]}
                 />
               </MenuTrigger>
-              <MenuOptions>
+              <MenuOptions
+                customStyles={{ optionsContainer: styles.optionsContainer }}
+              >
                 <MenuOption
                   onSelect={() => {
                     setViewMode("today");
@@ -402,7 +405,10 @@ const TodoApp: React.FC = () => {
             keyExtractor={(item) => item.id}
           />
           <TouchableOpacity
-            style={styles.addButton}
+            style={[
+              styles.addButton,
+              { backgroundColor: colors.buttonBackgroundColor },
+            ]}
             onPress={() => {
               openAddModal;
               setIsAdding(true);
@@ -411,7 +417,11 @@ const TodoApp: React.FC = () => {
               setDueDate(new Date());
             }}
           >
-            <Text style={styles.addButtonText}>+</Text>
+            <Text
+              style={[styles.addButtonText, { color: colors.buttonTextColor }]}
+            >
+              +
+            </Text>
           </TouchableOpacity>
           {isEditing && (
             <CustomModalWindow
@@ -421,7 +431,13 @@ const TodoApp: React.FC = () => {
             >
               <TextInput
                 ref={textInputRef}
-                style={styles.input}
+                style={[
+                  styles.input,
+                  {
+                    color: colors.inputTextColor,
+                    borderColor: colors.inputBorderColor,
+                  },
+                ]}
                 placeholder="Edit todo..."
                 value={text}
                 onChangeText={setText}
@@ -459,7 +475,13 @@ const TodoApp: React.FC = () => {
             >
               <TextInput
                 ref={textInputRef}
-                style={styles.input}
+                style={[
+                  styles.input,
+                  {
+                    color: colors.inputTextColor,
+                    borderColor: colors.inputBorderColor,
+                  },
+                ]}
                 placeholder="Enter todo..."
                 value={text}
                 onChangeText={setText}
@@ -542,8 +564,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   input: {
-    color: "#FFC300",
-    borderColor: "#ddd",
     borderWidth: 1,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -552,7 +572,6 @@ const styles = StyleSheet.create({
   todoItem: {
     padding: 10,
     borderBottomWidth: 1,
-    borderColor: "#ddd",
   },
   todoTextContainer: {
     flexDirection: "row",
@@ -578,13 +597,12 @@ const styles = StyleSheet.create({
 
     width: 50,
     height: 50,
-    backgroundColor: "#83218B",
+
     borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
   },
   addButtonText: {
-    color: "#FFC300",
     fontSize: 30,
   },
   modalContainer: {
@@ -617,6 +635,9 @@ const styles = StyleSheet.create({
   repeatIcon: {
     marginLeft: 10,
     color: "#FFC300",
+  },
+  optionsContainer: {
+    marginTop: -30,
   },
 });
 

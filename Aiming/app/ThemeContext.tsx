@@ -1,37 +1,89 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { Appearance } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-type ThemeContextType = {
-  theme: "Light" | "Dark";
+interface ThemeContextProps {
+  theme: string;
   toggleTheme: () => void;
-  textColor: string;
-  iconColor: string;
-};
+  colors: {
+    backgroundColor: string;
+    textColor: string;
+    buttonBackgroundColor: string;
+    buttonTextColor: string;
+    modalBackgroundColor: string;
+    iconColor: string;
+    listContainerBorderColor: string;
+    inputTextColor: string;
+    inputBorderColor: string;
+  };
+}
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const ThemeContext = createContext<ThemeContextProps>({
+  theme: "Light", // Default value
+  toggleTheme: () => {},
+  colors: {
+    backgroundColor: "#D6FFA2",
+    textColor: "black",
+    buttonBackgroundColor: "#2E631D",
+    buttonTextColor: "#9CD888",
+    modalBackgroundColor: "#D6FFA2",
+    iconColor: "black",
+    listContainerBorderColor: "black",
+    inputTextColor: "black",
+    inputBorderColor: "black",
+  },
+});
 
-export const useTheme = (): ThemeContextType => {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error("useTheme must be used within a ThemeProvider");
-  }
-  return context;
-};
-
-export const ThemeProvider: React.FC<{ children: ReactNode }> = ({
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [theme, setTheme] = useState<"Light" | "Dark">("Light");
+  const [theme, setTheme] = useState<string>("Light");
 
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "Light" ? "Dark" : "Light"));
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const storedTheme = await AsyncStorage.getItem("theme");
+        if (storedTheme) {
+          setTheme(storedTheme);
+          console.log("Theme set", storedTheme);
+        } else {
+          const colorScheme = Appearance.getColorScheme();
+          setTheme(colorScheme === "dark" ? "Dark" : "Light");
+        }
+      } catch (error) {
+        console.error("Failed to load theme from AsyncStorage", error);
+      }
+    };
+    loadTheme();
+  }, []);
+
+  const toggleTheme = async () => {
+    const newTheme = theme === "Light" ? "Dark" : "Light";
+    setTheme(newTheme);
+    try {
+      await AsyncStorage.setItem("theme", newTheme);
+    } catch (error) {
+      console.error("Failed to save theme to AsyncStorage", error);
+    }
   };
 
-  const textColor = theme === "Light" ? "black" : "#FFC300";
-  const iconColor = theme === "Light" ? "black" : "#FFC300";
+  const colors = {
+    backgroundColor: theme === "Light" ? "#D6FFA2" : "#4D5149", // Added this line
+    textColor: theme === "Light" ? "black" : "#FFC300",
+    iconColor: theme === "Light" ? "black" : "#FFC300",
+    buttonBackgroundColor: theme === "Light" ? "#2E631D" : "black",
+    buttonTextColor: theme === "Light" ? "#9CD888" : "#FFC300",
+    listContainerBorderColor: theme === "Light" ? "black" : "white",
+    modalBackgroundColor: theme === "Light" ? "#D6FFA2" : "#5A5A5A",
+    inputTextColor: theme === "Light" ? "black" : "white",
+    inputBorderColor: theme === "Light" ? "black" : "#FFC300",
+  };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, textColor, iconColor }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, colors }}>
       {children}
     </ThemeContext.Provider>
   );
 };
+
+export const useTheme = () => useContext(ThemeContext);

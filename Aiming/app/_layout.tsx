@@ -10,30 +10,45 @@ const RootLayout = () => {
           name="index"
           options={{
             headerTitle: "",
+            headerStyle: {
+              backgroundColor: "black",
+            },
           }}
         />
         <Stack.Screen
           name="myday/[id]"
           options={{
             headerTitle: "Home",
+            headerStyle: {
+              backgroundColor: "black",
+            },
           }}
         />
         <Stack.Screen
           name="mylists/lists"
           options={{
             headerTitle: "Home",
+            headerStyle: {
+              backgroundColor: "black",
+            },
           }}
         />
         <Stack.Screen
           name="mylists/mylistsdetail/[listid]"
           options={{
             headerTitle: "Home",
+            headerStyle: {
+              backgroundColor: "black",
+            },
           }}
         />
         <Stack.Screen
           name="mainsettings/mainsettings"
           options={{
             headerTitle: "Home",
+            headerStyle: {
+              backgroundColor: "black",
+            },
           }}
         />
       </Stack>

@@ -11,7 +11,7 @@ import {
 } from "react-native-popup-menu";
 import { useTheme } from "../app/ThemeContext";
 const MainPageMenu: React.FC = () => {
-  const { iconColor, textColor } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <Menu style={styles.menuItem}>
@@ -19,13 +19,13 @@ const MainPageMenu: React.FC = () => {
         <Icon
           name="menu"
           size={30}
-          style={[styles.menuIcon, { color: iconColor }]}
+          style={[styles.menuIcon, { color: colors.iconColor }]}
         />
       </MenuTrigger>
       <MenuOptions customStyles={{ optionsContainer: styles.optionsContainer }}>
         <MenuOption>
           <Link href="/mainsettings/mainsettings">
-            <Text style={[styles.menuOptionText, { color: textColor }]}>
+            <Text style={[styles.menuOptionText, { color: colors.textColor }]}>
               Settings
             </Text>
           </Link>

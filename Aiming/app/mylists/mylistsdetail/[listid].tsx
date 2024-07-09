@@ -4,11 +4,8 @@ import {
   Text,
   View,
   TextInput,
-  Button,
   FlatList,
   TouchableOpacity,
-  Modal,
-  Pressable,
   TouchableWithoutFeedback,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -16,6 +13,7 @@ import { useLocalSearchParams } from "expo-router";
 import Icon from "react-native-vector-icons/Ionicons";
 import ThemedView from "@/app/ThemedView";
 import { useTheme } from "@/app/ThemeContext";
+import CustomModalWindow from "@/components/customModalWindow";
 interface List {
   id: string;
   name: string;
@@ -37,7 +35,7 @@ const ListDetail: React.FC = () => {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const textInputRef = useRef<TextInput>(null);
   const { listid } = useLocalSearchParams<{ listid: string }>();
-  const { textColor, iconColor } = useTheme();
+  const { colors } = useTheme();
   useEffect(() => {
     loadList();
   }, [listid]);
@@ -156,6 +154,7 @@ const ListDetail: React.FC = () => {
         onPress={() => toggleComplete(item.id)}
         style={[
           styles.listItem,
+          { borderColor: colors.listContainerBorderColor },
           isEditingCurrentItem && styles.editingListItem,
         ]}
       >
@@ -163,7 +162,7 @@ const ListDetail: React.FC = () => {
           style={[
             styles.listItemText,
             item.completed && styles.completedItemText,
-            { color: textColor },
+            { color: colors.textColor },
           ]}
         >
           {item.title}
@@ -177,7 +176,7 @@ const ListDetail: React.FC = () => {
       <ThemedView style={styles.container}>
         {list && (
           <>
-            <Text style={[styles.title, { color: textColor }]}>
+            <Text style={[styles.title, { color: colors.textColor }]}>
               {list.name}
             </Text>
             <FlatList
@@ -186,10 +185,20 @@ const ListDetail: React.FC = () => {
               keyExtractor={(item) => item.id}
             />
             <TouchableOpacity
-              style={styles.addButton}
+              style={[
+                styles.addButton,
+                { backgroundColor: colors.buttonBackgroundColor },
+              ]}
               onPress={() => setIsAddingItem(true)}
             >
-              <Text style={styles.addButtonText}>+</Text>
+              <Text
+                style={[
+                  styles.addButtonText,
+                  { color: colors.buttonTextColor },
+                ]}
+              >
+                +
+              </Text>
             </TouchableOpacity>
           </>
         )}
@@ -217,36 +226,44 @@ const ListDetail: React.FC = () => {
             </TouchableOpacity>
           </View>
         )}
-        <Modal visible={isAddingItem} transparent={true} animationType="slide">
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <TextInput
-                ref={textInputRef}
-                style={styles.input}
-                onChangeText={setItemName}
-                value={itemName}
-                placeholder="Item Name"
-              />
-              <Button title="Save" onPress={addItem} />
-              <Button title="Cancel" onPress={() => setIsAddingItem(false)} />
-            </View>
-          </View>
-        </Modal>
-        <Modal visible={isEditingItem} transparent={true} animationType="slide">
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <TextInput
-                ref={textInputRef}
-                style={styles.input}
-                onChangeText={setItemName}
-                value={itemName}
-                placeholder="Edit Item"
-              />
-              <Button title="Save" onPress={editItem} />
-              <Button title="Cancel" onPress={() => setIsEditingItem(false)} />
-            </View>
-          </View>
-        </Modal>
+        <CustomModalWindow
+          open={isAddingItem}
+          onPressSave={addItem}
+          onPressCancel={() => setIsAddingItem(false)}
+        >
+          <TextInput
+            ref={textInputRef}
+            style={[
+              styles.input,
+              {
+                color: colors.inputTextColor,
+                borderColor: colors.inputBorderColor,
+              },
+            ]}
+            onChangeText={setItemName}
+            value={itemName}
+            placeholder="Item Name"
+          />
+        </CustomModalWindow>
+        <CustomModalWindow
+          open={isEditingItem}
+          onPressSave={editItem}
+          onPressCancel={() => setIsEditingItem(false)}
+        >
+          <TextInput
+            ref={textInputRef}
+            style={[
+              styles.input,
+              {
+                color: colors.inputTextColor,
+                borderColor: colors.inputBorderColor,
+              },
+            ]}
+            onChangeText={setItemName}
+            value={itemName}
+            placeholder="Edit Item"
+          />
+        </CustomModalWindow>
       </ThemedView>
     </TouchableWithoutFeedback>
   );
@@ -267,7 +284,6 @@ const styles = StyleSheet.create({
   listItem: {
     padding: 10,
     borderBottomWidth: 1,
-    borderColor: "#ddd",
   },
   listItemText: {
     fontSize: 18,
@@ -327,13 +343,12 @@ const styles = StyleSheet.create({
 
     width: 50,
     height: 50,
-    backgroundColor: "blue",
+
     borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
   },
   addButtonText: {
-    color: "white",
     fontSize: 30,
   },
 });

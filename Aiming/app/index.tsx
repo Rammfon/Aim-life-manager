@@ -9,18 +9,26 @@ import MainSettings from "./mainsettings/mainsettings";
 import ThemedView from "./ThemedView";
 
 const HomePage = () => {
-  const { textColor } = useTheme();
+  const { colors } = useTheme();
   return (
     <MenuProvider>
       <ThemedView style={styles.container}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: textColor }]}>Homepage</Text>
+          <Text style={[styles.title, { color: colors.textColor }]}>
+            Homepage
+          </Text>
           <MainPageMenu />
         </View>
-        <Link style={[styles.link, { color: textColor }]} href="/myday/1">
+        <Link
+          style={[styles.link, { color: colors.textColor }]}
+          href="/myday/1"
+        >
           My Day
         </Link>
-        <Link style={[styles.link, { color: textColor }]} href="/mylists/lists">
+        <Link
+          style={[styles.link, { color: colors.textColor }]}
+          href="/mylists/lists"
+        >
           My Lists
         </Link>
       </ThemedView>

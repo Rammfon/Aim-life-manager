@@ -6,10 +6,10 @@ import ThemedView from "../ThemedView";
 
 const MainSettings: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
-  const { textColor } = useTheme();
+  const { colors } = useTheme();
   return (
     <ThemedView style={styles.container}>
-      <Text style={[styles.title, { color: textColor }]}>Settings</Text>
+      <Text style={[styles.title, { color: colors.textColor }]}>Settings</Text>
       <CustomButton
         title={
           theme === "Light" ? "Switch to Dark Mode" : "Switch to Light Mode"

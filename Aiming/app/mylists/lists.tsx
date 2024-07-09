@@ -4,10 +4,8 @@ import {
   Text,
   View,
   TextInput,
-  Button,
   FlatList,
   TouchableOpacity,
-  Modal,
   Pressable,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -24,6 +22,7 @@ import {
 import MainPageMenu from "@/components/mainPageMenu";
 import ThemedView from "../ThemedView";
 import { useTheme } from "../ThemeContext";
+import CustomModalWindow from "@/components/customModalWindow";
 interface List {
   id: string;
   name: string;
@@ -41,7 +40,8 @@ const MyTodoList: React.FC = () => {
   const [isConfirmDeleteVisible, setIsConfirmDeleteVisible] =
     useState<boolean>(false);
   const textInputRef = useRef<TextInput>(null);
-  const { textColor, iconColor } = useTheme();
+  const { colors } = useTheme();
+
   useEffect(() => {
     loadLists();
   }, []);
@@ -127,7 +127,10 @@ const MyTodoList: React.FC = () => {
   const renderList = ({ item }: { item: List }) => (
     <View>
       <Pressable
-        style={styles.listContainer}
+        style={[
+          styles.listContainer,
+          { borderColor: colors.listContainerBorderColor },
+        ]}
         onLongPress={() => setSelectedListId(item.id)}
         onPress={() =>
           isSelectingForDeletion
@@ -138,7 +141,9 @@ const MyTodoList: React.FC = () => {
               })
         }
       >
-        <Text style={[styles.listName, { color: textColor }]}>{item.name}</Text>
+        <Text style={[styles.listName, { color: colors.textColor }]}>
+          {item.name}
+        </Text>
         {isSelectingForDeletion && listsToDelete.has(item.id) && (
           <Icon name="checkmark" size={20} color="green" />
         )}
@@ -150,17 +155,21 @@ const MyTodoList: React.FC = () => {
     <MenuProvider>
       <ThemedView style={styles.container}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: textColor }]}>My Lists</Text>
+          <Text style={[styles.title, { color: colors.textColor }]}>
+            My Lists
+          </Text>
           <Menu>
             <MenuTrigger>
               <Icon
                 name="menu"
                 size={30}
                 color="#000"
-                style={[styles.menuIcon, { color: iconColor }]}
+                style={[styles.menuIcon, { color: colors.iconColor }]}
               />
             </MenuTrigger>
-            <MenuOptions>
+            <MenuOptions
+              customStyles={{ optionsContainer: styles.optionsContainer }}
+            >
               <MenuOption
                 onSelect={() => {
                   setIsSelectingForDeletion(!isSelectingForDeletion);
@@ -177,10 +186,17 @@ const MyTodoList: React.FC = () => {
           keyExtractor={(item) => item.id}
         />
         <TouchableOpacity
-          style={styles.addButton}
+          style={[
+            styles.addButton,
+            { backgroundColor: colors.buttonBackgroundColor },
+          ]}
           onPress={() => setIsAddingList(true)}
         >
-          <Text style={styles.addButtonText}>+</Text>
+          <Text
+            style={[styles.addButtonText, { color: colors.buttonTextColor }]}
+          >
+            +
+          </Text>
         </TouchableOpacity>
 
         {isSelectingForDeletion && (
@@ -200,51 +216,44 @@ const MyTodoList: React.FC = () => {
           </View>
         )}
 
-        <Modal
-          visible={isConfirmDeleteVisible}
-          transparent={true}
-          animationType="slide"
+        <CustomModalWindow
+          open={isConfirmDeleteVisible}
+          onPressSave={deleteSelectedLists}
+          onPressCancel={cancelDelete}
+          saveButtonTitle="Confirm"
         >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.confirmDeleteText}>
-                Are you sure you want to delete the following lists?
+          <Text style={styles.confirmDeleteText}>
+            Are you sure you want to delete the following lists?
+          </Text>
+          {Array.from(listsToDelete).map((listId) => {
+            const list = lists.find((list) => list.id === listId);
+            return (
+              <Text key={listId} style={styles.listToDelete}>
+                {list?.name}
               </Text>
-              {Array.from(listsToDelete).map((listId) => {
-                const list = lists.find((list) => list.id === listId);
-                return (
-                  <Text key={listId} style={styles.listToDelete}>
-                    {list?.name}
-                  </Text>
-                );
-              })}
-              <View style={styles.confirmDeleteButtons}>
-                <Button
-                  title="Confirm"
-                  onPress={deleteSelectedLists}
-                  color="red"
-                />
-                <Button title="Cancel" onPress={cancelDelete} />
-              </View>
-            </View>
-          </View>
-        </Modal>
+            );
+          })}
+        </CustomModalWindow>
 
-        <Modal visible={isAddingList} transparent={true} animationType="slide">
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <TextInput
-                ref={textInputRef}
-                style={styles.input}
-                onChangeText={setListName}
-                value={listName}
-                placeholder="List Name"
-              />
-              <Button title="Save" onPress={addList} />
-              <Button title="Cancel" onPress={() => setIsAddingList(false)} />
-            </View>
-          </View>
-        </Modal>
+        <CustomModalWindow
+          open={isAddingList}
+          onPressSave={addList}
+          onPressCancel={() => setIsAddingList(false)}
+        >
+          <TextInput
+            ref={textInputRef}
+            style={[
+              styles.input,
+              {
+                color: colors.inputTextColor,
+                borderColor: colors.inputBorderColor,
+              },
+            ]}
+            onChangeText={setListName}
+            value={listName}
+            placeholder="List Name"
+          />
+        </CustomModalWindow>
       </ThemedView>
     </MenuProvider>
   );
@@ -256,6 +265,9 @@ const styles = StyleSheet.create({
 
     paddingTop: 50,
     paddingHorizontal: 20,
+  },
+  optionsContainer: {
+    marginTop: -30,
   },
   header: {
     flexDirection: "row",
@@ -277,7 +289,7 @@ const styles = StyleSheet.create({
   listContainer: {
     marginBottom: 20,
     padding: 10,
-    borderColor: "#ddd",
+
     borderWidth: 1,
     borderRadius: 5,
   },
@@ -291,13 +303,12 @@ const styles = StyleSheet.create({
     left: "50%",
     width: 50,
     height: 50,
-    backgroundColor: "blue",
+
     borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
   },
   addButtonText: {
-    color: "white",
     fontSize: 30,
   },
   actionBar: {
