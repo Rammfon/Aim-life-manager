@@ -10,8 +10,12 @@ const RootLayout = () => {
           name="index"
           options={{
             headerTitle: "",
+            headerTintColor: "white",
             headerStyle: {
               backgroundColor: "black",
+            },
+            headerTitleStyle: {
+              color: "white",
             },
           }}
         />
@@ -19,8 +23,12 @@ const RootLayout = () => {
           name="myday/[id]"
           options={{
             headerTitle: "Home",
+            headerTintColor: "white",
             headerStyle: {
               backgroundColor: "black",
+            },
+            headerTitleStyle: {
+              color: "white",
             },
           }}
         />
@@ -28,8 +36,12 @@ const RootLayout = () => {
           name="mylists/lists"
           options={{
             headerTitle: "Home",
+            headerTintColor: "white",
             headerStyle: {
               backgroundColor: "black",
+            },
+            headerTitleStyle: {
+              color: "white",
             },
           }}
         />
@@ -37,8 +49,12 @@ const RootLayout = () => {
           name="mylists/mylistsdetail/[listid]"
           options={{
             headerTitle: "Home",
+            headerTintColor: "white",
             headerStyle: {
               backgroundColor: "black",
+            },
+            headerTitleStyle: {
+              color: "white",
             },
           }}
         />
@@ -46,8 +62,12 @@ const RootLayout = () => {
           name="mainsettings/mainsettings"
           options={{
             headerTitle: "Home",
+            headerTintColor: "white",
             headerStyle: {
               backgroundColor: "black",
+            },
+            headerTitleStyle: {
+              color: "white",
             },
           }}
         />

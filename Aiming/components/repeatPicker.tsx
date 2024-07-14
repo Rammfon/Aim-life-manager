@@ -1,7 +1,6 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet } from "react-native";
 import CustomButton from "./customButton";
-import CustomModalWindow from "./customModalWindow";
 
 interface RepeatPickerProps {
   repeat: string;
@@ -23,40 +22,63 @@ const RepeatPicker: React.FC<RepeatPickerProps> = ({
   };
 
   return (
-    <View>
-      <CustomButton title="Daily" onPress={() => setRepeat("daily")} />
-
-      <CustomButton title="Weekly" onPress={() => setRepeat("weekly")} />
-
-      {/* Render days of the week buttons using CustomButton */}
-      <View style={styles.daysOfWeekContainer}>
-        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-          <CustomButton
-            key={day}
-            title={day}
-            onPress={() => handleDaysOfWeekChange(day)}
-            style={[
-              styles.dayButton,
-              daysOfWeek.includes(day) ? styles.selectedDayButton : {},
-            ]}
-          />
-        ))}
+    <View style={styles.container}>
+      <View style={styles.buttonContainer}>
+        <CustomButton title="Daily" onPress={() => setRepeat("daily")} />
+        <CustomButton title="Weekly" onPress={() => setRepeat("weekly")} />
+      </View>
+      {/* ScrollView should be placed in a separate container */}
+      <View style={styles.scrollViewContainer}>
+        <ScrollView
+          horizontal
+          contentContainerStyle={styles.daysOfWeek}
+          showsHorizontalScrollIndicator={false}
+        >
+          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+            <CustomButton
+              key={day}
+              title={day}
+              onPress={() => handleDaysOfWeekChange(day)}
+              style={[
+                styles.dayButton,
+                daysOfWeek.includes(day) ? styles.selectedDayButton : {},
+              ]}
+            />
+          ))}
+        </ScrollView>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  daysOfWeekContainer: {
+  container: {
+    flexDirection: "column",
+    justifyContent: "flex-start",
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  buttonContainer: {
+    flexDirection: "column",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  scrollViewContainer: {
+    flexDirection: "row", // Ensure ScrollView is in a row
+    justifyContent: "center",
+    width: "100%", // Make sure it takes the full width
+  },
+  daysOfWeek: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20,
   },
   dayButton: {
-    padding: 10,
-    borderRadius: 5,
-
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     marginHorizontal: 5,
+    borderRadius: 4,
+
+    justifyContent: "center",
+    alignItems: "center",
   },
   selectedDayButton: {
     backgroundColor: "#a0a0a0",

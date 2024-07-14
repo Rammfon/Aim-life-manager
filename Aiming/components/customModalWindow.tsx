@@ -1,8 +1,8 @@
-// components/customModalWindow.tsx
 import React from "react";
-import { Modal, View, Text, Button, StyleSheet } from "react-native";
+import { Modal, View, StyleSheet } from "react-native";
 import CustomButton from "./customButton";
 import { useTheme } from "@/app/ThemeContext";
+
 const CustomModalWindow: React.FC<{
   open: boolean;
   onPressSave: () => void;
@@ -29,8 +29,10 @@ const CustomModalWindow: React.FC<{
           ]}
         >
           {children}
-          <CustomButton title={saveButtonTitle} onPress={onPressSave} />
-          <CustomButton title={cancelButtonTitle} onPress={onPressCancel} />
+          <View>
+            <CustomButton title={saveButtonTitle} onPress={onPressSave} />
+            <CustomButton title={cancelButtonTitle} onPress={onPressCancel} />
+          </View>
         </View>
       </View>
     </Modal>
@@ -47,7 +49,6 @@ const styles = StyleSheet.create({
   modalContent: {
     width: 300,
     padding: 20,
-
     borderRadius: 10,
     alignItems: "center",
   },

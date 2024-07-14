@@ -37,9 +37,10 @@ const styles = StyleSheet.create({
     margin: 3,
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: "#83218B",
     borderRadius: 5,
     marginHorizontal: 5,
+    justifyContent: "center",
+    alignItems: "center",
   },
   customButtonText: {
     color: "#FFC300",
