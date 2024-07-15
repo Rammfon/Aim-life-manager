@@ -54,6 +54,10 @@ const TodoApp: React.FC = () => {
   const textInputRef = useRef<TextInput>(null);
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const [selectedRepeatText, setSelectedRepeatText] =
+    useState<string>("Unselected");
+  const [selectedDueDateText, setSelectedDueDateText] =
+    useState<string>("Unselected");
   useState<boolean>(false);
   useEffect(() => {
     loadTodos();
@@ -142,12 +146,30 @@ const TodoApp: React.FC = () => {
     cancelEdit();
   };
 
-  const startEditTodo = (id: string, title: string) => {
+  const startEditTodo = (
+    id: string,
+    title: string,
+    dueDate: string,
+    repeat: string,
+    daysOfWeek: string[]
+  ) => {
     setIsEditing(true);
     setIsAdding(false);
     setCurrentTodoId(id);
     setText(title);
-    setSelectedTodoId(null);
+    setDueDate(new Date(dueDate));
+    setRepeat(repeat);
+    setDaysOfWeek(daysOfWeek);
+    setSelectedRepeatText(
+      repeat === "none" && daysOfWeek.length > 0
+        ? `Specific days: ${daysOfWeek.map((day) => daysMap[day]).join(", ")}`
+        : repeat === "none"
+        ? "Unselected"
+        : repeat
+    );
+    setSelectedDueDateText(
+      dueDate === new Date().toISOString().split("T")[0] ? "Today" : dueDate
+    );
   };
 
   const pickDateForTodo = (id: string) => {
@@ -212,6 +234,7 @@ const TodoApp: React.FC = () => {
   const handleConfirm = (date: Date) => {
     const newDueDate = date.toISOString().split("T")[0];
     setDueDate(date);
+    setSelectedDueDateText(newDueDate);
     if (isAdding) {
       setDueDate(date);
     } else if (currentTodoId) {
@@ -247,9 +270,22 @@ const TodoApp: React.FC = () => {
     return due < today;
   };
 
+  const daysMap: { [key: string]: string } = {
+    Mon: "Monday",
+    Tue: "Tuesday",
+    Wed: "Wednesday",
+    Thu: "Thursday",
+    Fri: "Friday",
+    Sat: "Saturday",
+    Sun: "Sunday",
+  };
+
   const renderItem = ({ item }: { item: Todo }) => {
     const isEditingCurrentTodo = currentTodoId === item.id;
-
+    const daysOfWeekText =
+      item.daysOfWeek && item.daysOfWeek.length > 0
+        ? item.daysOfWeek.map((day) => daysMap[day]).join(", ")
+        : "";
     return (
       <TouchableOpacity
         onLongPress={() => handleLongPress(item.id)}
@@ -290,6 +326,18 @@ const TodoApp: React.FC = () => {
         >
           {formatDueDate(item.dueDate)}
         </Text>
+        <Text>
+          {item.repeat === "none" &&
+          (!item.daysOfWeek || item.daysOfWeek.length === 0)
+            ? "No repeat"
+            : `Repeats: ${
+                item.repeat !== "none"
+                  ? `${item.repeat}${
+                      daysOfWeekText ? ` on ${daysOfWeekText}` : ""
+                    }`
+                  : daysOfWeekText
+              }`}
+        </Text>
       </TouchableOpacity>
     );
   };
@@ -306,6 +354,9 @@ const TodoApp: React.FC = () => {
     setDaysOfWeek((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
     );
+    if (repeat !== "none") {
+      setRepeat("none");
+    }
   };
 
   const openAddModal = () => {
@@ -314,6 +365,8 @@ const TodoApp: React.FC = () => {
     setDueDate(new Date());
     setRepeat("none");
     setDaysOfWeek([]);
+    setSelectedRepeatText("Unselected");
+    setSelectedDueDateText("Unselected");
   };
 
   return (
@@ -368,12 +421,18 @@ const TodoApp: React.FC = () => {
             <View style={styles.actionBar}>
               <TouchableOpacity
                 style={styles.actionButton}
-                onPress={() =>
+                onPress={() => {
+                  const todo = todos.find(
+                    (todo) => todo.id === selectedTodoId
+                  )!;
                   startEditTodo(
                     selectedTodoId!,
-                    todos.find((todo) => todo.id === selectedTodoId)!.title
-                  )
-                }
+                    todo.title,
+                    todo.dueDate,
+                    todo.repeat,
+                    todo.daysOfWeek || []
+                  );
+                }}
               >
                 <Icon name="pencil" size={20} color="#000" />
               </TouchableOpacity>
@@ -415,6 +474,8 @@ const TodoApp: React.FC = () => {
               setIsEditing(false);
               setText("");
               setDueDate(new Date());
+              setSelectedDueDateText("Unselected");
+              setSelectedRepeatText("Unselected");
             }}
           >
             <Text
@@ -423,6 +484,7 @@ const TodoApp: React.FC = () => {
               +
             </Text>
           </TouchableOpacity>
+
           {isEditing && (
             <CustomModalWindow
               open={isEditing}
@@ -445,6 +507,7 @@ const TodoApp: React.FC = () => {
                 returnKeyType="done"
               />
               <CustomButton title="Pick a date" onPress={showDatePicker} />
+              <Text>{selectedDueDateText}</Text>
               <DateTimePickerModal
                 isVisible={isDatePickerVisible}
                 mode="date"
@@ -452,6 +515,7 @@ const TodoApp: React.FC = () => {
                 onCancel={hideDatePicker}
               />
               <CustomButton title="Repeat" onPress={showRepeatPicker} />
+              <Text>{selectedRepeatText}</Text>
               <CustomModalWindow
                 open={isRepeatPickerVisible}
                 onPressSave={hideRepeatPicker}
@@ -462,6 +526,7 @@ const TodoApp: React.FC = () => {
                   setRepeat={setRepeat}
                   daysOfWeek={daysOfWeek}
                   setDaysOfWeek={setDaysOfWeek}
+                  setSelectedRepeatText={setSelectedRepeatText}
                 />
               </CustomModalWindow>
             </CustomModalWindow>
@@ -489,6 +554,7 @@ const TodoApp: React.FC = () => {
                 returnKeyType="done"
               />
               <CustomButton title="Pick a date" onPress={showDatePicker} />
+              <Text>{selectedDueDateText}</Text>
               <DateTimePickerModal
                 isVisible={isDatePickerVisible}
                 mode="date"
@@ -496,6 +562,7 @@ const TodoApp: React.FC = () => {
                 onCancel={hideDatePicker}
               />
               <CustomButton title="Repeat" onPress={showRepeatPicker} />
+              <Text>{selectedRepeatText}</Text>
               <CustomModalWindow
                 open={isRepeatPickerVisible}
                 onPressSave={hideRepeatPicker}
@@ -506,6 +573,7 @@ const TodoApp: React.FC = () => {
                   setRepeat={setRepeat}
                   daysOfWeek={daysOfWeek}
                   setDaysOfWeek={setDaysOfWeek}
+                  setSelectedRepeatText={setSelectedRepeatText}
                 />
               </CustomModalWindow>
             </CustomModalWindow>

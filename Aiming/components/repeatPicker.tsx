@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { View, ScrollView, StyleSheet } from "react-native";
 import CustomButton from "./customButton";
 
@@ -7,6 +7,7 @@ interface RepeatPickerProps {
   setRepeat: React.Dispatch<React.SetStateAction<string>>;
   daysOfWeek: string[];
   setDaysOfWeek: React.Dispatch<React.SetStateAction<string[]>>;
+  setSelectedRepeatText: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const RepeatPicker: React.FC<RepeatPickerProps> = ({
@@ -14,20 +15,58 @@ const RepeatPicker: React.FC<RepeatPickerProps> = ({
   setRepeat,
   daysOfWeek,
   setDaysOfWeek,
+  setSelectedRepeatText,
 }) => {
   const handleDaysOfWeekChange = (day: string) => {
     setDaysOfWeek((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
     );
+    if (repeat !== "none") {
+      setRepeat("none");
+      setSelectedRepeatText("none"); // Aktualizace textu opakování
+    }
   };
+
+  const handleRepeatChange = (selectedRepeat: string) => {
+    setRepeat(selectedRepeat);
+    setSelectedRepeatText(selectedRepeat); // Aktualizace textu opakování
+    if (daysOfWeek.length > 0) {
+      setDaysOfWeek([]);
+    }
+  };
+  const daysMap: { [key: string]: string } = {
+    Mon: "Monday",
+    Tue: "Tuesday",
+    Wed: "Wednesday",
+    Thu: "Thursday",
+    Fri: "Friday",
+    Sat: "Saturday",
+    Sun: "Sunday",
+  };
+  useEffect(() => {
+    if (daysOfWeek.length > 0) {
+      setSelectedRepeatText(
+        `Specific days: ${daysOfWeek.map((day) => daysMap[day]).join(", ")}`
+      );
+    } else if (repeat === "none") {
+      setSelectedRepeatText("Unselected");
+    }
+  }, [daysOfWeek, repeat]);
 
   return (
     <View style={styles.container}>
       <View style={styles.buttonContainer}>
-        <CustomButton title="Daily" onPress={() => setRepeat("daily")} />
-        <CustomButton title="Weekly" onPress={() => setRepeat("weekly")} />
+        <CustomButton
+          title="Daily"
+          onPress={() => handleRepeatChange("daily")}
+          style={repeat === "daily" ? styles.selectedButton : {}}
+        />
+        <CustomButton
+          title="Weekly"
+          onPress={() => handleRepeatChange("weekly")}
+          style={repeat === "weekly" ? styles.selectedButton : {}}
+        />
       </View>
-      {/* ScrollView should be placed in a separate container */}
       <View style={styles.scrollViewContainer}>
         <ScrollView
           horizontal
@@ -50,7 +89,6 @@ const RepeatPicker: React.FC<RepeatPickerProps> = ({
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: "column",
@@ -76,11 +114,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginHorizontal: 5,
     borderRadius: 4,
-
     justifyContent: "center",
     alignItems: "center",
   },
   selectedDayButton: {
+    backgroundColor: "#a0a0a0",
+  },
+  selectedButton: {
     backgroundColor: "#a0a0a0",
   },
 });
