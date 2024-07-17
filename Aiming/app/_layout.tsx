@@ -1,5 +1,5 @@
 import React from "react";
-import { Stack, Slot } from "expo-router";
+import { Stack } from "expo-router";
 import { ThemeProvider } from "./ThemeContext";
 
 const RootLayout = () => {

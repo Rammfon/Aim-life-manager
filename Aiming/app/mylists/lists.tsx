@@ -9,7 +9,7 @@ import {
   Pressable,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation } from "expo-router";
+
 import { Link, router } from "expo-router";
 import Icon from "react-native-vector-icons/Ionicons";
 import {
@@ -19,7 +19,7 @@ import {
   MenuOption,
   MenuTrigger,
 } from "react-native-popup-menu";
-import MainPageMenu from "@/components/mainPageMenu";
+
 import ThemedView from "../ThemedView";
 import { useTheme } from "../ThemeContext";
 import CustomModalWindow from "@/components/customModalWindow";
@@ -206,18 +206,31 @@ const MyTodoList: React.FC = () => {
         </TouchableOpacity>
 
         {isSelectingForDeletion && (
-          <View style={styles.actionBar}>
+          <View
+            style={[
+              styles.actionBar,
+              { backgroundColor: colors.actionBarColor },
+            ]}
+          >
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[
+                styles.actionButton,
+                { backgroundColor: colors.buttonBackgroundColor },
+              ]}
               onPress={confirmDeleteSelectedLists}
             >
-              <Text>Delete selected</Text>
+              <Text style={[{ color: colors.buttonTextColor }]}>
+                Delete selected
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[
+                styles.actionButton,
+                { backgroundColor: colors.buttonBackgroundColor },
+              ]}
               onPress={cancelDelete}
             >
-              <Text>Cancel</Text>
+              <Text style={[{ color: colors.buttonTextColor }]}>Cancel</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -283,7 +296,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 20,
   },
   menuIcon: {
     padding: 10,
@@ -317,6 +329,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 30,
   },
+
   actionBar: {
     position: "absolute",
     top: 0,
@@ -324,7 +337,7 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: "row",
     justifyContent: "space-around",
-    backgroundColor: "#f9f9f9",
+
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderColor: "#ddd",
@@ -332,7 +345,7 @@ const styles = StyleSheet.create({
   actionButton: {
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: "#e0e0e0",
+
     borderRadius: 5,
     marginHorizontal: 5,
   },

@@ -18,7 +18,7 @@ const CustomButton: React.FC<CustomButtonProps> = ({
     <TouchableOpacity
       style={[
         styles.customButton,
-        { backgroundColor: colors.buttonBackgroundColor }, // Nastavení barvy pozadí
+        { backgroundColor: colors.buttonBackgroundColor },
         ...(Array.isArray(style) ? style : [style]),
       ]}
       onPress={onPress}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { View, ScrollView, StyleSheet } from "react-native";
 import CustomButton from "./customButton";
 
@@ -23,13 +23,13 @@ const RepeatPicker: React.FC<RepeatPickerProps> = ({
     );
     if (repeat !== "none") {
       setRepeat("none");
-      setSelectedRepeatText("none"); // Aktualizace textu opakování
+      setSelectedRepeatText("none");
     }
   };
 
   const handleRepeatChange = (selectedRepeat: string) => {
     setRepeat(selectedRepeat);
-    setSelectedRepeatText(selectedRepeat); // Aktualizace textu opakování
+    setSelectedRepeatText(selectedRepeat);
     if (daysOfWeek.length > 0) {
       setDaysOfWeek([]);
     }
@@ -102,9 +102,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   scrollViewContainer: {
-    flexDirection: "row", // Ensure ScrollView is in a row
+    flexDirection: "row",
     justifyContent: "center",
-    width: "100%", // Make sure it takes the full width
+    width: "100%",
   },
   daysOfWeek: {
     flexDirection: "row",

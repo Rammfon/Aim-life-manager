@@ -16,6 +16,7 @@ interface ThemeContextProps {
     inputTextColor: string;
     inputBorderColor: string;
     menuBackground: string;
+    actionBarColor: string;
   };
 }
 
@@ -32,7 +33,8 @@ const ThemeContext = createContext<ThemeContextProps>({
     listContainerBorderColor: "black",
     inputTextColor: "black",
     inputBorderColor: "black",
-    menuBackground: "#D6FFA2", // Added for menu background
+    menuBackground: "#D6FFA2",
+    actionBarColor: "#7FAD6F",
   },
 });
 
@@ -70,7 +72,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const colors = {
-    backgroundColor: theme === "Light" ? "#D6FFA2" : "#4D5149", // Added this line
+    backgroundColor: theme === "Light" ? "#D6FFA2" : "#4D5149",
     textColor: theme === "Light" ? "black" : "#FFC300",
     iconColor: theme === "Light" ? "black" : "#FFC300",
     buttonBackgroundColor: theme === "Light" ? "#2E631D" : "black",
@@ -79,7 +81,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     modalBackgroundColor: theme === "Light" ? "#D6FFA2" : "#5A5A5A",
     inputTextColor: theme === "Light" ? "black" : "white",
     inputBorderColor: theme === "Light" ? "black" : "#FFC300",
-    menuBackground: theme === "Light" ? "#2E631D" : "#black", // Define menu background color
+    menuBackground: theme === "Light" ? "#2E631D" : "#black",
+    actionBarColor: theme === "Light" ? "#CACACA" : "grey",
   };
 
   return (

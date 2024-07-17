@@ -4,11 +4,9 @@ import {
   Text,
   View,
   TextInput,
-  Button,
   FlatList,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  Modal,
 } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -260,7 +258,7 @@ const TodoApp: React.FC = () => {
   const isDateInPast = (dueDate: string): boolean => {
     const today = new Date();
     const due = new Date(dueDate);
-    today.setHours(0, 0, 0, 0); // Nastavíme hodiny na 0, aby se porovnalo pouze datum
+    today.setHours(0, 0, 0, 0);
     due.setHours(0, 0, 0, 0);
     return due < today;
   };
@@ -430,9 +428,17 @@ const TodoApp: React.FC = () => {
           </View>
 
           {selectedTodoId && (
-            <View style={styles.actionBar}>
+            <View
+              style={[
+                styles.actionBar,
+                { backgroundColor: colors.actionBarColor },
+              ]}
+            >
               <TouchableOpacity
-                style={styles.actionButton}
+                style={[
+                  styles.actionButton,
+                  { backgroundColor: colors.buttonBackgroundColor },
+                ]}
                 onPress={() => {
                   const todo = todos.find(
                     (todo) => todo.id === selectedTodoId
@@ -446,14 +452,17 @@ const TodoApp: React.FC = () => {
                   );
                 }}
               >
-                <Icon name="pencil" size={20} color="#000" />
+                <Icon name="pencil" size={20} color={colors.buttonTextColor} />
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.actionButton}
+                style={[
+                  styles.actionButton,
+                  { backgroundColor: colors.buttonBackgroundColor },
+                ]}
                 onPress={() => deleteTodo(selectedTodoId!)}
               >
-                <Icon name="trash" size={20} color="#000" />
+                <Icon name="trash" size={20} color={colors.buttonTextColor} />
               </TouchableOpacity>
             </View>
           )}
@@ -618,7 +627,7 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: "row",
     justifyContent: "space-around",
-    backgroundColor: "#f9f9f9",
+
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderColor: "#ddd",
@@ -626,7 +635,7 @@ const styles = StyleSheet.create({
   actionButton: {
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: "#e0e0e0",
+
     borderRadius: 5,
     marginHorizontal: 5,
   },

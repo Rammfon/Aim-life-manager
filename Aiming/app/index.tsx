@@ -1,11 +1,11 @@
 import React from "react";
-import { registerRootComponent } from "expo";
+
 import { View, Text, StyleSheet } from "react-native";
 import { Link } from "expo-router";
 import MainPageMenu from "@/components/mainPageMenu";
 import { MenuProvider } from "react-native-popup-menu";
-import { ThemeProvider, useTheme } from "./ThemeContext";
-import MainSettings from "./mainsettings/mainsettings";
+import { useTheme } from "./ThemeContext";
+
 import ThemedView from "./ThemedView";
 
 const HomePage = () => {
