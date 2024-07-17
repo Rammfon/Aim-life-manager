@@ -48,7 +48,7 @@ const RootLayout = () => {
         <Stack.Screen
           name="mylists/mylistsdetail/[listid]"
           options={{
-            headerTitle: "Home",
+            headerTitle: "All lists",
             headerTintColor: "white",
             headerStyle: {
               backgroundColor: "black",

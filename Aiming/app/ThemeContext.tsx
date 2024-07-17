@@ -15,6 +15,7 @@ interface ThemeContextProps {
     listContainerBorderColor: string;
     inputTextColor: string;
     inputBorderColor: string;
+    menuBackground: string;
   };
 }
 
@@ -31,6 +32,7 @@ const ThemeContext = createContext<ThemeContextProps>({
     listContainerBorderColor: "black",
     inputTextColor: "black",
     inputBorderColor: "black",
+    menuBackground: "#D6FFA2", // Added for menu background
   },
 });
 
@@ -77,6 +79,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     modalBackgroundColor: theme === "Light" ? "#D6FFA2" : "#5A5A5A",
     inputTextColor: theme === "Light" ? "black" : "white",
     inputBorderColor: theme === "Light" ? "black" : "#FFC300",
+    menuBackground: theme === "Light" ? "#2E631D" : "#black", // Define menu background color
   };
 
   return (

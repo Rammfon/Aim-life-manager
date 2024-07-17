@@ -36,6 +36,7 @@ import CustomButton from "@/components/customButton";
 import CustomModalWindow from "@/components/customModalWindow";
 import ThemedView from "../ThemedView";
 import { useTheme } from "../ThemeContext";
+import { menuOptionsStyles } from "@/components/menuOptionsStyle";
 const TodoApp: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [text, setText] = useState<string>("");
@@ -208,6 +209,9 @@ const TodoApp: React.FC = () => {
     setCurrentTodoId(null);
     setRepeat("none");
     setDaysOfWeek([]);
+    setDueDate(new Date());
+    setSelectedRepeatText("Unselected");
+    setSelectedDueDateText("Unselected");
   };
 
   const handleLongPress = (id: string) => {
@@ -238,16 +242,7 @@ const TodoApp: React.FC = () => {
     if (isAdding) {
       setDueDate(date);
     } else if (currentTodoId) {
-      const newTodos = sortTodos(
-        todos.map((todo) =>
-          todo.id === currentTodoId
-            ? { ...todo, dueDate: newDueDate, completed: false }
-            : todo
-        )
-      );
-      setTodos(newTodos);
-      saveTodos(newTodos);
-      setCurrentTodoId(null);
+      setDueDate(date);
     }
     hideDatePicker();
   };
@@ -387,29 +382,46 @@ const TodoApp: React.FC = () => {
                   style={[styles.menuIcon, { color: colors.iconColor }]}
                 />
               </MenuTrigger>
-              <MenuOptions
-                customStyles={{ optionsContainer: styles.optionsContainer }}
-              >
+              <MenuOptions customStyles={menuOptionsStyles(colors)}>
                 <MenuOption
                   onSelect={() => {
                     setViewMode("today");
                   }}
                 >
-                  <Text style={styles.menuOptionText}>Today's Tasks</Text>
+                  <Text
+                    style={[
+                      styles.menuOptionText,
+                      { color: colors.buttonTextColor },
+                    ]}
+                  >
+                    Today's Tasks
+                  </Text>
                 </MenuOption>
                 <MenuOption
                   onSelect={() => {
                     setViewMode("all");
                   }}
                 >
-                  <Text style={styles.menuOptionText}>All Tasks</Text>
+                  <Text
+                    style={[
+                      styles.menuOptionText,
+                      { color: colors.buttonTextColor },
+                    ]}
+                  >
+                    All Tasks
+                  </Text>
                 </MenuOption>
                 <MenuOption
                   onSelect={() => {
                     deleteCompletedTodos();
                   }}
                 >
-                  <Text style={styles.menuOptionText}>
+                  <Text
+                    style={[
+                      styles.menuOptionText,
+                      { color: colors.buttonTextColor },
+                    ]}
+                  >
                     Delete Completed Todos
                   </Text>
                 </MenuOption>
@@ -436,19 +448,7 @@ const TodoApp: React.FC = () => {
               >
                 <Icon name="pencil" size={20} color="#000" />
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => pickDateForTodo(selectedTodoId!)}
-              >
-                <Icon name="calendar" size={20} color="#000" />
 
-                <DateTimePickerModal
-                  isVisible={isDatePickerVisible}
-                  mode="date"
-                  onConfirm={handleConfirm}
-                  onCancel={hideDatePicker}
-                />
-              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.actionButton}
                 onPress={() => deleteTodo(selectedTodoId!)}
@@ -469,11 +469,13 @@ const TodoApp: React.FC = () => {
               { backgroundColor: colors.buttonBackgroundColor },
             ]}
             onPress={() => {
-              openAddModal;
+              openAddModal();
               setIsAdding(true);
               setIsEditing(false);
               setText("");
               setDueDate(new Date());
+              setRepeat("none");
+              setDaysOfWeek([]);
               setSelectedDueDateText("Unselected");
               setSelectedRepeatText("Unselected");
             }}

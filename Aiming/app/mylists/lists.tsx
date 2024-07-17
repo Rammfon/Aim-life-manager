@@ -23,6 +23,7 @@ import MainPageMenu from "@/components/mainPageMenu";
 import ThemedView from "../ThemedView";
 import { useTheme } from "../ThemeContext";
 import CustomModalWindow from "@/components/customModalWindow";
+import { menuOptionsStyles } from "@/components/menuOptionsStyle";
 interface List {
   id: string;
   name: string;
@@ -167,15 +168,20 @@ const MyTodoList: React.FC = () => {
                 style={[styles.menuIcon, { color: colors.iconColor }]}
               />
             </MenuTrigger>
-            <MenuOptions
-              customStyles={{ optionsContainer: styles.optionsContainer }}
-            >
+            <MenuOptions customStyles={menuOptionsStyles(colors)}>
               <MenuOption
                 onSelect={() => {
                   setIsSelectingForDeletion(!isSelectingForDeletion);
                 }}
               >
-                <Text style={styles.menuOptionText}>Delete lists</Text>
+                <Text
+                  style={[
+                    styles.menuOptionText,
+                    { color: colors.buttonTextColor },
+                  ]}
+                >
+                  Delete lists
+                </Text>
               </MenuOption>
             </MenuOptions>
           </Menu>

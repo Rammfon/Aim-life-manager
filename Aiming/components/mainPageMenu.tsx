@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Link } from "expo-router";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -8,8 +8,11 @@ import {
   MenuOptions,
   MenuProvider,
   MenuTrigger,
+  MenuContext,
 } from "react-native-popup-menu";
 import { useTheme } from "../app/ThemeContext";
+import { menuOptionsStyles } from "./menuOptionsStyle";
+
 const MainPageMenu: React.FC = () => {
   const { colors } = useTheme();
 
@@ -22,10 +25,12 @@ const MainPageMenu: React.FC = () => {
           style={[styles.menuIcon, { color: colors.iconColor }]}
         />
       </MenuTrigger>
-      <MenuOptions customStyles={{ optionsContainer: styles.optionsContainer }}>
+      <MenuOptions customStyles={menuOptionsStyles(colors)}>
         <MenuOption>
           <Link href="/mainsettings/mainsettings">
-            <Text style={[styles.menuOptionText, { color: colors.textColor }]}>
+            <Text
+              style={[styles.menuOptionText, { color: colors.buttonTextColor }]}
+            >
               Settings
             </Text>
           </Link>
@@ -41,9 +46,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 10,
   },
-  optionsContainer: {
-    marginTop: -30,
-  },
+
   menuIcon: {
     color: "#FFC300",
   },
