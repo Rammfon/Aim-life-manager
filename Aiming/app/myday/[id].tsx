@@ -19,6 +19,19 @@ import {
   MenuOption,
   MenuTrigger,
 } from "react-native-popup-menu";
+import {
+  addItem,
+  sortItems,
+  editTodoItem,
+  startEditTodo,
+} from "@/components/itemUtils";
+
+import { RepeatPicker as Reppicker } from "@/components/repeatPicker";
+import CustomButton from "@/components/customButton";
+import CustomModalWindow from "@/components/customModalWindow";
+import ThemedView from "../ThemedView";
+import { useTheme } from "../ThemeContext";
+import { menuOptionsStyles } from "@/components/menuOptionsStyle";
 
 interface Todo {
   id: string;
@@ -29,14 +42,16 @@ interface Todo {
   daysOfWeek?: string[];
 }
 
-import { RepeatPicker as Reppicker } from "@/components/repeatPicker";
-import CustomButton from "@/components/customButton";
-import CustomModalWindow from "@/components/customModalWindow";
-import ThemedView from "../ThemedView";
-import { useTheme } from "../ThemeContext";
-import { menuOptionsStyles } from "@/components/menuOptionsStyle";
+interface List {
+  id: string;
+  name: string;
+  title: string;
+  items: Todo[];
+}
+
 const TodoApp: React.FC = () => {
-  const [todos, setTodos] = useState<Todo[]>([]);
+  const [list, setList] = useState<List | null>(null);
+  const [itemName, setItemName] = useState<string>("");
   const [text, setText] = useState<string>("");
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isAdding, setIsAdding] = useState<boolean>(false);
@@ -57,9 +72,9 @@ const TodoApp: React.FC = () => {
     useState<string>("Unselected");
   const [selectedDueDateText, setSelectedDueDateText] =
     useState<string>("Unselected");
-  useState<boolean>(false);
+
   useEffect(() => {
-    loadTodos();
+    loadList();
   }, []);
 
   useEffect(() => {
@@ -70,12 +85,17 @@ const TodoApp: React.FC = () => {
     }
   }, [isAdding, isEditing]);
 
-  const loadTodos = async () => {
+  const loadList = async () => {
     try {
       const storedTodos = await AsyncStorage.getItem("todos");
       if (storedTodos) {
-        const parsedTodos = JSON.parse(storedTodos);
-        setTodos(sortTodos(parsedTodos));
+        const parsedTodos: Todo[] = JSON.parse(storedTodos);
+        setList({
+          id: "1",
+          title: "My List",
+          name: "My List",
+          items: sortItems(parsedTodos),
+        });
         console.log("Loaded todos from AsyncStorage:", parsedTodos);
       } else {
         console.log("No todos found in AsyncStorage");
@@ -85,131 +105,48 @@ const TodoApp: React.FC = () => {
     }
   };
 
-  const saveTodos = async (newTodos: Todo[]) => {
+  const saveList = async (newList: List) => {
     try {
-      await AsyncStorage.setItem("todos", JSON.stringify(newTodos));
-      console.log("Saved todos to AsyncStorage:", newTodos);
+      await AsyncStorage.setItem("todos", JSON.stringify(newList.items));
+      console.log("Saved todos to AsyncStorage:", newList.items);
     } catch (error) {
       console.error("Failed to save todos to AsyncStorage:", error);
     }
   };
 
-  const sortTodos = (todos: Todo[]): Todo[] => {
-    return todos.sort((a, b) => Number(a.completed) - Number(b.completed));
-  };
-
-  const addTodo = () => {
-    if (text.trim().length > 0) {
-      const newTodo: Todo = {
-        id: Date.now().toString(),
-        title: text,
-        completed: false,
-        dueDate: dueDate.toISOString().split("T")[0],
-        repeat,
-        daysOfWeek,
-      };
-      const newTodos = sortTodos([...todos, newTodo]);
-      setTodos(newTodos);
-      saveTodos(newTodos);
-      setText("");
-      setDueDate(new Date());
-      setRepeat("none");
-      setDaysOfWeek([]);
-      setIsAdding(false);
-    }
-  };
-
   const deleteTodo = (id: string) => {
-    const newTodos = sortTodos(todos.filter((todo) => todo.id !== id));
-    setTodos(newTodos);
-    saveTodos(newTodos);
-    setSelectedTodoId(null);
-    cancelEdit();
+    if (list) {
+      const newTodos = sortItems(list.items.filter((todo) => todo.id !== id));
+      const updatedList = { ...list, items: newTodos };
+      setList(updatedList);
+      saveList(updatedList);
+      setSelectedTodoId(null);
+      cancelEdit();
+    }
   };
 
   const deleteCompletedTodos = () => {
-    const newTodos = sortTodos(todos.filter((todo) => !todo.completed));
-    setTodos(newTodos);
-    saveTodos(newTodos);
-  };
-
-  const toggleComplete = (id: string) => {
-    const newTodos = sortTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
-    );
-    setTodos(newTodos);
-    saveTodos(newTodos);
-    setSelectedTodoId(null);
-    cancelEdit();
-  };
-
-  const startEditTodo = (
-    id: string,
-    title: string,
-    dueDate: string,
-    repeat: string,
-    daysOfWeek: string[]
-  ) => {
-    setIsEditing(true);
-    setIsAdding(false);
-    setCurrentTodoId(id);
-    setText(title);
-    setDueDate(new Date(dueDate));
-    setRepeat(repeat);
-    setDaysOfWeek(daysOfWeek);
-    setSelectedRepeatText(
-      repeat === "none" && daysOfWeek.length > 0
-        ? `Specific days: ${daysOfWeek.map((day) => daysMap[day]).join(", ")}`
-        : repeat === "none"
-        ? "Unselected"
-        : repeat
-    );
-    setSelectedDueDateText(
-      dueDate === new Date().toISOString().split("T")[0] ? "Today" : dueDate
-    );
-  };
-
-  const pickDateForTodo = (id: string) => {
-    setCurrentTodoId(id);
-    showDatePicker();
-  };
-
-  const editTodo = () => {
-    if (currentTodoId && text.trim().length > 0) {
-      const newTodos = sortTodos(
-        todos.map((todo) =>
-          todo.id === currentTodoId
-            ? {
-                ...todo,
-                title: text,
-                completed: false,
-                dueDate: dueDate.toISOString().split("T")[0],
-                repeat,
-                daysOfWeek,
-              }
-            : todo
-        )
-      );
-      setTodos(newTodos);
-      saveTodos(newTodos);
-      setText("");
-      setIsEditing(false);
-      setCurrentTodoId(null);
+    if (list) {
+      const newTodos = sortItems(list.items.filter((todo) => !todo.completed));
+      const updatedList = { ...list, items: newTodos };
+      setList(updatedList);
+      saveList(updatedList);
     }
   };
 
-  const cancelEdit = () => {
-    setIsEditing(false);
-    setIsAdding(false);
-    setText("");
-    setCurrentTodoId(null);
-    setRepeat("none");
-    setDaysOfWeek([]);
-    setDueDate(new Date());
-    setSelectedRepeatText("Unselected");
-    setSelectedDueDateText("Unselected");
+  const toggleComplete = (id: string) => {
+    if (list) {
+      const newTodos = sortItems(
+        list.items.map((todo) =>
+          todo.id === id ? { ...todo, completed: !todo.completed } : todo
+        )
+      );
+      const updatedList = { ...list, items: newTodos };
+      setList(updatedList);
+      saveList(updatedList);
+      setSelectedTodoId(null);
+      cancelEdit();
+    }
   };
 
   const handleLongPress = (id: string) => {
@@ -234,25 +171,20 @@ const TodoApp: React.FC = () => {
   };
 
   const handleConfirm = (date: Date) => {
-    const newDueDate = date.toISOString().split("T")[0];
     setDueDate(date);
-    setSelectedDueDateText(newDueDate);
-    if (isAdding) {
-      setDueDate(date);
-    } else if (currentTodoId) {
-      setDueDate(date);
-    }
+    const newDueDate = date.toISOString().split("T")[0];
+    setSelectedDueDateText(
+      newDueDate === new Date().toISOString().split("T")[0]
+        ? "Today"
+        : formatDueDate(newDueDate)
+    );
     hideDatePicker();
   };
 
+  // Funkce formatDueDate pro správné zobrazení data
   const formatDueDate = (dueDate: string): string => {
-    const today = new Date().toISOString().split("T")[0];
-    if (dueDate === today) {
-      return "Today";
-    } else {
-      const [year, month, day] = dueDate.split("-");
-      return `${parseInt(day, 10)}.${parseInt(month, 10)}.`;
-    }
+    const [year, month, day] = dueDate.split("-");
+    return `${parseInt(day, 10)}.${parseInt(month, 10)}.${year}`;
   };
 
   const isDateInPast = (dueDate: string): boolean => {
@@ -286,7 +218,6 @@ const TodoApp: React.FC = () => {
         style={[
           styles.todoItem,
           { borderColor: colors.listContainerBorderColor },
-          isEditingCurrentTodo && styles.editingTodoItem,
         ]}
       >
         <View style={styles.todoTextContainer}>
@@ -334,13 +265,17 @@ const TodoApp: React.FC = () => {
       </TouchableOpacity>
     );
   };
+
   const filterTodos = () => {
-    const today = new Date().toISOString().split("T")[0];
-    if (viewMode === "today") {
-      return todos.filter((todo) => todo.dueDate === today);
-    } else {
-      return todos;
+    if (list) {
+      const today = new Date().toISOString().split("T")[0];
+      if (viewMode === "today") {
+        return list.items.filter((todo) => todo.dueDate === today);
+      } else {
+        return list.items;
+      }
     }
+    return [];
   };
 
   const handleDaysOfWeekChange = (day: string) => {
@@ -358,6 +293,18 @@ const TodoApp: React.FC = () => {
     setDueDate(new Date());
     setRepeat("none");
     setDaysOfWeek([]);
+    setSelectedRepeatText("Unselected");
+    setSelectedDueDateText("Unselected");
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setIsAdding(false);
+    setText("");
+    setCurrentTodoId(null);
+    setRepeat("none");
+    setDaysOfWeek([]);
+    setDueDate(new Date());
     setSelectedRepeatText("Unselected");
     setSelectedDueDateText("Unselected");
   };
@@ -440,15 +387,26 @@ const TodoApp: React.FC = () => {
                   { backgroundColor: colors.buttonBackgroundColor },
                 ]}
                 onPress={() => {
-                  const todo = todos.find(
+                  const todo = list?.items.find(
                     (todo) => todo.id === selectedTodoId
                   )!;
                   startEditTodo(
-                    selectedTodoId!,
+                    todo.id,
                     todo.title,
                     todo.dueDate,
                     todo.repeat,
-                    todo.daysOfWeek || []
+                    todo.daysOfWeek || [],
+                    setIsEditing,
+                    setIsAdding,
+                    setCurrentTodoId,
+                    setItemName,
+                    setDueDate,
+                    setRepeat,
+                    setDaysOfWeek,
+                    setSelectedRepeatText,
+                    setSelectedDueDateText,
+                    daysMap,
+                    formatDueDate
                   );
                 }}
               >
@@ -499,7 +457,21 @@ const TodoApp: React.FC = () => {
           {isEditing && (
             <CustomModalWindow
               open={isEditing}
-              onPressSave={editTodo}
+              onPressSave={() =>
+                editTodoItem(
+                  list,
+                  currentTodoId,
+                  text, // Use text instead of itemName for editing
+                  sortItems,
+                  setList,
+                  saveList,
+                  setText, // Use setText instead of setItemName for editing
+                  setIsEditing,
+                  dueDate,
+                  repeat,
+                  daysOfWeek
+                )
+              }
               onPressCancel={cancelEdit}
             >
               <TextInput
@@ -514,7 +486,21 @@ const TodoApp: React.FC = () => {
                 placeholder="Edit todo..."
                 value={text}
                 onChangeText={setText}
-                onSubmitEditing={editTodo}
+                onSubmitEditing={() =>
+                  editTodoItem(
+                    list,
+                    currentTodoId,
+                    text, // Use text instead of itemName for editing
+                    sortItems,
+                    setList,
+                    saveList,
+                    setText, // Use setText instead of setItemName for editing
+                    setIsEditing,
+                    dueDate,
+                    repeat,
+                    daysOfWeek
+                  )
+                }
                 returnKeyType="done"
               />
               <CustomButton title="Pick a date" onPress={showDatePicker} />
@@ -546,7 +532,20 @@ const TodoApp: React.FC = () => {
           {isAdding && (
             <CustomModalWindow
               open={isAdding}
-              onPressSave={addTodo}
+              onPressSave={() =>
+                addItem(
+                  list,
+                  text, // Use text instead of itemName for adding
+                  sortItems,
+                  setList,
+                  saveList,
+                  setText, // Use setText instead of setItemName for adding
+                  setIsAdding,
+                  dueDate,
+                  repeat,
+                  daysOfWeek
+                )
+              }
               onPressCancel={cancelEdit}
             >
               <TextInput
@@ -561,7 +560,20 @@ const TodoApp: React.FC = () => {
                 placeholder="Enter todo..."
                 value={text}
                 onChangeText={setText}
-                onSubmitEditing={addTodo}
+                onSubmitEditing={() =>
+                  addItem(
+                    list,
+                    text, // Use text instead of itemName for adding
+                    sortItems,
+                    setList,
+                    saveList,
+                    setText, // Use setText instead of setItemName for adding
+                    setIsAdding,
+                    dueDate,
+                    repeat,
+                    daysOfWeek
+                  )
+                }
                 returnKeyType="done"
               />
               <CustomButton title="Pick a date" onPress={showDatePicker} />
@@ -594,7 +606,6 @@ const TodoApp: React.FC = () => {
     </MenuProvider>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -659,6 +670,10 @@ const styles = StyleSheet.create({
   todoText: {
     fontSize: 18,
   },
+
+  todoInfoText: {
+    fontSize: 15,
+  },
   todoTextCompleted: {
     textDecorationLine: "line-through",
     color: "#aaa",
@@ -666,9 +681,7 @@ const styles = StyleSheet.create({
   pastDueDateText: {
     color: "red",
   },
-  editingTodoItem: {
-    backgroundColor: "#e0f7fa",
-  },
+
   addButton: {
     position: "absolute",
     bottom: 30,

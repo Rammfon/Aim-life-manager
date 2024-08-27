@@ -14,21 +14,18 @@ import Icon from "react-native-vector-icons/Ionicons";
 import ThemedView from "@/app/ThemedView";
 import { useTheme } from "@/app/ThemeContext";
 import CustomModalWindow from "@/components/customModalWindow";
-interface List {
-  id: string;
-  name: string;
-  items: Item[];
-}
-
-interface Item {
-  id: string;
-  title: string;
-  completed: boolean;
-}
+import {
+  addItem,
+  sortItems,
+  List,
+  Todo,
+  editTodoItem,
+} from "@/components/itemUtils";
 
 const ListDetail: React.FC = () => {
   const [list, setList] = useState<List | null>(null);
   const [itemName, setItemName] = useState<string>("");
+  const [text, setText] = useState<string>("");
   const [isAddingItem, setIsAddingItem] = useState<boolean>(false);
   const [currentItemId, setCurrentItemId] = useState<string | null>(null);
   const [isEditingItem, setIsEditingItem] = useState<boolean>(false);
@@ -36,6 +33,7 @@ const ListDetail: React.FC = () => {
   const textInputRef = useRef<TextInput>(null);
   const { listid } = useLocalSearchParams<{ listid: string }>();
   const { colors } = useTheme();
+
   useEffect(() => {
     loadList();
   }, [listid]);
@@ -80,42 +78,6 @@ const ListDetail: React.FC = () => {
     }
   };
 
-  const sortItems = (items: Item[]): Item[] => {
-    return items.sort((a, b) => Number(a.completed) - Number(b.completed));
-  };
-
-  const addItem = () => {
-    if (list && itemName.trim().length > 0) {
-      const newItem = {
-        id: Date.now().toString(),
-        title: itemName,
-        completed: false,
-      };
-      const newItems = sortItems([...list.items, newItem]);
-      const updatedList = { ...list, items: newItems };
-      setList(updatedList);
-      saveList(updatedList);
-      setItemName("");
-      setIsAddingItem(false);
-    }
-  };
-
-  const editItem = () => {
-    if (list && currentItemId && itemName.trim().length > 0) {
-      const newItems = sortItems(
-        list.items.map((item) =>
-          item.id === currentItemId ? { ...item, title: itemName } : item
-        )
-      );
-      const updatedList = { ...list, items: newItems };
-      setList(updatedList);
-      saveList(updatedList);
-      setItemName("");
-      setCurrentItemId(null);
-      setIsEditingItem(false);
-    }
-  };
-
   const deleteItem = (itemId: string) => {
     if (list) {
       const newItems = sortItems(
@@ -145,7 +107,7 @@ const ListDetail: React.FC = () => {
     setSelectedItemId(itemId);
   };
 
-  const renderListItem = ({ item }: { item: Item }) => {
+  const renderListItem = ({ item }: { item: Todo }) => {
     const isEditingCurrentItem = currentItemId === item.id;
 
     return (
@@ -155,7 +117,6 @@ const ListDetail: React.FC = () => {
         style={[
           styles.listItem,
           { borderColor: colors.listContainerBorderColor },
-          isEditingCurrentItem && styles.editingListItem,
         ]}
       >
         <Text
@@ -189,7 +150,10 @@ const ListDetail: React.FC = () => {
                 styles.addButton,
                 { backgroundColor: colors.buttonBackgroundColor },
               ]}
-              onPress={() => setIsAddingItem(true)}
+              onPress={() => {
+                setIsAddingItem(true);
+                setItemName("");
+              }}
             >
               <Text
                 style={[
@@ -203,9 +167,17 @@ const ListDetail: React.FC = () => {
           </>
         )}
         {selectedItemId && (
-          <View style={styles.actionBar}>
+          <View
+            style={[
+              styles.actionBar,
+              { backgroundColor: colors.actionBarColor },
+            ]}
+          >
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[
+                styles.actionButton,
+                { backgroundColor: colors.buttonBackgroundColor },
+              ]}
               onPress={() => {
                 const item = list?.items.find(
                   (item) => item.id === selectedItemId
@@ -216,19 +188,32 @@ const ListDetail: React.FC = () => {
                 setSelectedItemId(null);
               }}
             >
-              <Icon name="pencil" size={20} color="#000" />
+              <Icon name="pencil" size={20} color={colors.buttonTextColor} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[
+                styles.actionButton,
+                { backgroundColor: colors.buttonBackgroundColor },
+              ]}
               onPress={() => deleteItem(selectedItemId)}
             >
-              <Icon name="trash" size={20} color="#000" />
+              <Icon name="trash" size={20} color={colors.buttonTextColor} />
             </TouchableOpacity>
           </View>
         )}
         <CustomModalWindow
           open={isAddingItem}
-          onPressSave={addItem}
+          onPressSave={() =>
+            addItem(
+              list,
+              itemName,
+              sortItems,
+              setList,
+              saveList,
+              setItemName,
+              setIsAddingItem
+            )
+          }
           onPressCancel={() => setIsAddingItem(false)}
         >
           <TextInput
@@ -247,7 +232,18 @@ const ListDetail: React.FC = () => {
         </CustomModalWindow>
         <CustomModalWindow
           open={isEditingItem}
-          onPressSave={editItem}
+          onPressSave={() =>
+            editTodoItem(
+              list,
+              currentItemId,
+              itemName,
+              sortItems,
+              setList,
+              saveList,
+              setItemName,
+              setIsEditingItem
+            )
+          }
           onPressCancel={() => setIsEditingItem(false)}
         >
           <TextInput
@@ -333,9 +329,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     width: "100%",
   },
-  editingListItem: {
-    backgroundColor: "#e0f7fa",
-  },
+
   addButton: {
     position: "absolute",
     bottom: 30,

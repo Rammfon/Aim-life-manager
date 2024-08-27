@@ -81,7 +81,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     modalBackgroundColor: theme === "Light" ? "#D6FFA2" : "#5A5A5A",
     inputTextColor: theme === "Light" ? "black" : "white",
     inputBorderColor: theme === "Light" ? "black" : "#FFC300",
-    menuBackground: theme === "Light" ? "#2E631D" : "#black",
+    menuBackground: theme === "Light" ? "#2E631D" : "black",
     actionBarColor: theme === "Light" ? "#CACACA" : "grey",
   };
 
